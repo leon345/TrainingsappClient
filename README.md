@@ -148,8 +148,8 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
   Werte ausserhalb werden beim Verlassen des Felds auf die Grenze gesetzt.
 - Die Einstellung wird nur lokal gespeichert (`localStorage`, Schluessel
   `trainingsapp.timer.einstellung.v1`). Der Abgleich mit dem Server folgt mit S-02b (E10).
-- Runden (Training plus Pause) wiederholen sich, bis der Benutzer anhaelt. Kein Ton,
-  keine Vibration. Der Laufzustand wird nicht gespeichert; Neuladen setzt zurueck.
+- Runden (Training plus Pause) wiederholen sich, bis der Benutzer anhaelt. Der
+  Laufzustand wird nicht gespeichert; Neuladen setzt zurueck.
 - Die Restzeit wird aus Zeitstempeln (`Date.now`) berechnet, nicht aus Takten (E1).
   Der Takt (250 ms) loest nur das Neuzeichnen aus. Logik ohne Browser in
   `src/timer/logik.ts`, getestet mit kontrollierter Uhr.
@@ -161,6 +161,23 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
 - Nicht geprueft: Verhalten in echtem iOS-Safari bei gesperrtem Bildschirm und ob Wake
   Lock auf echten Geraeten greift (C-01b).
 
+### Phasensignale (C-17, E33)
+
+- Jeder Phasenwechsel wird genau einmal signalisiert; nach Rueckkehr aus dem Hintergrund
+  nur der letzte Wechsel (`src/timer/phasenwechsel.ts`, Port `PhasenSignal`).
+- Ton per Web Audio (Sinus, Huellkurve): zu Training zwei Toene 880 Hz je 120 ms, zu
+  Pause ein Ton 440 Hz, 200 ms. Der AudioContext wird beim Tippen auf Start/Fortsetzen
+  bzw. beim Einschalten des Tons entsperrt.
+- Vibration per `navigator.vibrate`: Training `[200]`, Pause `[100,100,100]`.
+- Sichtbar immer: Die Phasenanzeige unter dem Ring wechselt Text und Farbe; sie ist die
+  einzige Live-Region (`aria-live="polite"`), der Wechsel wird nur einmal angesagt.
+- Schalter Ton und Vibration, Standard an, lokal unter `trainingsapp.timer.signale.v1`.
+  Ohne `navigator.vibrate` ist der Vibrationsschalter deaktiviert, mit Hinweis.
+- Beim Anhalten kein Signal. Ein Signal fuer "Ende" gibt es nicht, weil der Timer kein
+  Ende kennt (offener Punkt aus E33).
+- Nicht geprueft: ob Ton und Vibration auf echten Geraeten hoer- bzw. spuerbar sind,
+  iOS-Safari, gesperrter Bildschirm, Stummschalter (C-01b).
+
 ## Funktionstests (C-09)
 
 Alle Tests lokal: `npm test` (Vitest) und `npm run test:e2e` (Playwright, baut beide
@@ -168,9 +185,13 @@ Builds selbst). Laeuft auf Port 4173 oder 4174 schon ein Server, verwendet Playw
 ausserhalb von CI diesen (`reuseExistingServer`); vor dem Lauf also keinen fremden
 `vite preview` offen lassen.
 
+E2E-Tests mit Zeit installieren `page.clock` und halten die Uhr nach dem Laden an
+(`e2e/uhr.ts`). Ohne Anhalten liefe sie mit der echten Zeit weiter, und exakte
+Anzeigen wie `00:09` wackelten unter Last.
+
 | Muss-Funktion | Tests |
 | --- | --- |
-| Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` (alle vier Browser) |
+| Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht, Phasensignale), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` und `e2e/phasensignale.spec.ts` (alle vier Browser, Ton und Vibration als Attrappen) |
 | Bedienbar auf dem Smartphone | `e2e/timer.spec.ts` (360 px, Zielflaechen), Projekt `mobile` |
 | Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` |
 | Passkeys, Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-03 bis C-05) |
