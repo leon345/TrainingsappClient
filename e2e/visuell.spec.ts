@@ -31,6 +31,8 @@ const ABSCHNITTE = [
   'buttons-gross',
   'zahlenfelder',
   'fortschritt',
+  // Schalter für Ton und Vibration (C-17)
+  'schalter',
 ] as const;
 
 async function oeffneGalerie(page: Page, farbschema: 'light' | 'dark') {
