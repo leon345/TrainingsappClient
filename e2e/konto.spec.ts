@@ -198,6 +198,8 @@ test.describe('Konto', () => {
   test('Sitzung abgelaufen: 401 beim Hinzufügen führt zur Anmeldung zurück', async ({ page }) => {
     const server = await oeffneApp(page, { angemeldet: true, passkeys: [PASSKEY_HANDY] });
     await zuKonto(page);
+    // Erst nach beantworteter Prüfung (Liste sichtbar) die Sitzung serverseitig beenden.
+    await expect(page.getByRole('listitem')).toHaveCount(1);
     server.angemeldet = false;
     server.setze('POST /v1/passkeys/optionen', { status: 401, json: FEHLER.NICHT_ANGEMELDET });
     await bediene(knopf(page, 'Weiteren Passkey hinzufügen'));
