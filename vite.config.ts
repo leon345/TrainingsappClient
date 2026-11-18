@@ -10,7 +10,27 @@ import { VitePWA } from 'vite-plugin-pwa';
 // (`vite build --mode test`, Entscheidung E24). Der Mode fuegt ausschliesslich
 // diesen Einstieg hinzu; Plugins, Defines und alles Uebrige sind in beiden
 // Builds gleich.
+//
+// Dev-Server (C-03): fest auf Port 5173, weil der Server im Dev-Profil genau
+// die Origin http://localhost:5173 erlaubt (Origin-Prüfung, E15). `/v1` geht
+// per Proxy an den Server auf Port 8080; so liegen App und API wie im Betrieb
+// unter derselben Origin und das Sitzungs-Cookie funktioniert ohne CORS.
+// `vite preview` übernimmt `server.proxy` und `server.strictPort`, wenn
+// `preview` sie nicht selbst setzt. Die Preview-Server (auch die der
+// Playwright-Tests) bleiben deshalb ausdrücklich ohne Proxy und mit dem
+// bisherigen Standard für strictPort.
 export default defineConfig(({ mode }) => ({
+  server: {
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/v1': { target: 'http://localhost:8080' },
+    },
+  },
+  preview: {
+    strictPort: false,
+    proxy: {},
+  },
   build: {
     rollupOptions: {
       input: {
