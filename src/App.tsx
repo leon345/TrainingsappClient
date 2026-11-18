@@ -1,8 +1,9 @@
-import { BeispielButton } from './components/BeispielButton';
+import { TimerAnsicht } from './timer/TimerAnsicht';
 
 /**
- * Anwendungsrahmen. Fachliche Ansichten (Timer, Passkeys, Workouts)
- * folgen in eigenen Tasks.
+ * Anwendungsrahmen. Startseite ist der Intervalltimer (C-02). Weitere
+ * Ansichten (Passkeys, Workouts) folgen in eigenen Tasks; bis dahin gibt es
+ * kein Routing.
  */
 export function App() {
   return (
@@ -11,13 +12,7 @@ export function App() {
         <h1 className="app__title md-typescale-title-large">Trainingsapp</h1>
       </header>
       <main className="app__main">
-        <section className="app__section" aria-labelledby="grundgeruest-titel">
-          <h2 id="grundgeruest-titel" className="md-typescale-headline-small">
-            Grundgerüst
-          </h2>
-          <p>React, TypeScript, Vite und React Aria Components sind eingerichtet.</p>
-          <BeispielButton />
-        </section>
+        <TimerAnsicht />
       </main>
     </div>
   );

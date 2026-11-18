@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react-aria-components';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -19,6 +19,8 @@ export interface ButtonProps extends Omit<AriaButtonProps, 'children' | 'classNa
   /** Optionales führendes Icon (dekorativ, der Text benennt den Button). */
   icon?: IconName;
   className?: string;
+  /** Zugriff auf das Button-Element, z. B. um den Fokus zu setzen (React 19: ref als Prop). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 /** Icon-Größe je Button-Größe (ButtonSmall/Medium/LargeTokens). */
