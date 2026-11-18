@@ -105,7 +105,7 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 | --- | --- | --- |
 | `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock; seit C-09 Einstellung per Tastatur, Neuladen im Lauf, gesperrter oder voller `localStorage`), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
 | `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Textfeld-Label schwebt bei Fokus (gemessene Lage und Groesse, kein Bildvergleich), keine fremden Hosts der Galerie |
-| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell) |
+| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell), Galerie-Abschnitt Schalter (C-17) |
 
 Die visuellen Tests laufen nur in Chromium (Vorgabe des Nutzers). Das Aussehen in
 Firefox, WebKit und der Mobil-Emulation wird **nicht** automatisch geprueft; dort
@@ -173,10 +173,17 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
   einzige Live-Region (`aria-live="polite"`), der Wechsel wird nur einmal angesagt.
 - Schalter Ton und Vibration, Standard an, lokal unter `trainingsapp.timer.signale.v1`.
   Ohne `navigator.vibrate` ist der Vibrationsschalter deaktiviert, mit Hinweis.
+- Ohne Unterstuetzung im Browser: Fehlt Web Audio oder lehnt der Browser `resume()` ab,
+  bleibt es still; fehlt `vibrate` oder wirft es, vibriert nichts. Timer und sichtbares
+  Signal laufen in jedem Fall weiter. In den Playwright-Browsern gibt es `vibrate` nur in
+  Chromium (Firefox, WebKit und die iPhone-Emulation melden es nicht); einen
+  AudioContext gibt es in allen vieren.
 - Beim Anhalten kein Signal. Ein Signal fuer "Ende" gibt es nicht, weil der Timer kein
   Ende kennt (offener Punkt aus E33).
-- Nicht geprueft: ob Ton und Vibration auf echten Geraeten hoer- bzw. spuerbar sind,
-  iOS-Safari, gesperrter Bildschirm, Stummschalter (C-01b).
+- Nur auf echten Geraeten pruefbar (offen fuer C-01b): ob Ton und Vibration hoer- bzw.
+  spuerbar sind, das Verhalten in iOS-Safari (dort fehlt `vibrate` voraussichtlich),
+  bei gesperrtem Bildschirm und mit Stummschalter. Die automatischen Tests ersetzen
+  AudioContext und `vibrate` durch Attrappen und pruefen nur, was ausgeloest wird.
 
 ## Funktionstests (C-09)
 
