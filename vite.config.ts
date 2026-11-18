@@ -5,13 +5,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // Alle Assets (Schriften, Icons) werden mitgebaut und vom eigenen Server
 // ausgeliefert. Keine fremden CDNs (Entscheidung E2).
-export default defineConfig({
+//
+// Die Komponentengalerie (galerie.html) ist nur im Test-Build enthalten
+// (`vite build --mode test`, Entscheidung E24). Der Mode fuegt ausschliesslich
+// diesen Einstieg hinzu; Plugins, Defines und alles Uebrige sind in beiden
+// Builds gleich.
+export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
-      // Zweite Einstiegsseite: Komponentengalerie fuer visuelle Tests (C-06).
       input: {
         main: 'index.html',
-        galerie: 'galerie.html',
+        ...(mode === 'test' ? { galerie: 'galerie.html' } : {}),
       },
     },
   },
@@ -65,4 +69,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
