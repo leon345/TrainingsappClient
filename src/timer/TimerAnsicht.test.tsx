@@ -241,6 +241,93 @@ describe('TimerAnsicht: Ablauf', () => {
   });
 });
 
+/*
+ * Ergänzungen C-09: Zustände und Übergänge, die oben nicht geprüft werden.
+ */
+describe('TimerAnsicht: Sperre und Zurücksetzen (C-09)', () => {
+  it('Einstellung bleibt auch angehalten gesperrt, erst Zurücksetzen gibt sie frei', () => {
+    render(<TimerAnsicht />);
+    const training = screen.getByRole('textbox', { name: 'Training in Sekunden' });
+    const pause = screen.getByRole('textbox', { name: 'Pause in Sekunden' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vergeheMitTakt(3000);
+    fireEvent.click(screen.getByRole('button', { name: 'Anhalten' }));
+
+    // Angehalten: Eine Änderung würde Phase und Runde des laufenden Durchgangs verschieben.
+    expect(training).toBeDisabled();
+    expect(pause).toBeDisabled();
+    expect(training).toHaveAccessibleDescription(/Zum Ändern zurücksetzen\.$/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zurücksetzen' }));
+    expect(training).toBeEnabled();
+    expect(pause).toBeEnabled();
+    expect(training).toHaveAccessibleDescription('1 bis 86400, entspricht 30 Sekunden.');
+  });
+
+  it('nach Zurücksetzen beginnt der nächste Lauf bei 0 mit der neuen Einstellung', () => {
+    render(<TimerAnsicht />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vergeheMitTakt(12_000);
+    fireEvent.click(screen.getByRole('button', { name: 'Anhalten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zurücksetzen' }));
+
+    // Eingabe und Übernahme beim Verlassen des Felds (userEvent wartet mit
+    // stillstehender Uhr endlos, daher fireEvent).
+    const training = screen.getByRole('textbox', { name: 'Training in Sekunden' });
+    fireEvent.focus(training);
+    fireEvent.change(training, { target: { value: '20' } });
+    fireEvent.blur(training);
+    expect(zeit()).toHaveTextContent('00:20');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vergeheMitTakt(5000);
+    // Ohne Rücksetzen der Laufzeit stünde hier 00:03 (12 s + 5 s von 20 s).
+    expect(zeit()).toHaveTextContent('00:15');
+    expect(screen.getByRole('status')).toHaveTextContent('Training, Runde 1');
+
+    vergeheMitTakt(15_000);
+    expect(screen.getByRole('status')).toHaveTextContent('Pause, Runde 1');
+    expect(zeit()).toHaveTextContent('00:10');
+  });
+});
+
+describe('TimerAnsicht: Fortschritt und Ansage (C-09)', () => {
+  it('Fortschrittsanzeige folgt der Phase und beginnt bei jedem Wechsel bei 0', () => {
+    render(<TimerAnsicht />);
+    const fortschritt = (name: string) => screen.getByRole('progressbar', { name });
+
+    expect(fortschritt('Fortschritt Training')).toHaveAttribute('aria-valuenow', '0');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vergeheMitTakt(15_000);
+    expect(fortschritt('Fortschritt Training')).toHaveAttribute('aria-valuenow', '50');
+    expect(fortschritt('Fortschritt Training')).toHaveAttribute('aria-valuetext', '50 %');
+
+    vergeheMitTakt(15_000);
+    expect(fortschritt('Fortschritt Pause')).toHaveAttribute('aria-valuenow', '0');
+
+    vergeheMitTakt(2500);
+    expect(fortschritt('Fortschritt Pause')).toHaveAttribute('aria-valuenow', '25');
+  });
+
+  it('Live-Ansage ändert sich nur beim Phasenwechsel, nicht mit jeder Sekunde', () => {
+    render(<TimerAnsicht />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+
+    // Jeden Takt der ersten Runde mitschreiben, was die Live-Region enthält.
+    const ansagen: string[] = [];
+    for (let ms = 0; ms < 40_000; ms += TAKT_MS) {
+      const text = screen.getByRole('status').textContent ?? '';
+      if (ansagen.at(-1) !== text) ansagen.push(text);
+      vergeheMitTakt(TAKT_MS);
+    }
+    expect(ansagen).toEqual(['Training, Runde 1', 'Pause, Runde 1']);
+    expect(screen.getByRole('status')).toHaveTextContent('Training, Runde 2');
+  });
+});
+
 describe('App', () => {
   it('Startseite ist der Timer', () => {
     render(<App />);
