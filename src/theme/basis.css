@@ -1,0 +1,36 @@
+/*
+ * Grundgestaltung auf Basis der Tokens. Komponenten bringen ihr eigenes CSS mit.
+ */
+:root {
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: 100%;
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  /* Fokusfarbe für alle Komponenten (wie md-focus-ring in material-web). */
+  --app-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-size: var(--md-sys-typescale-body-large-size);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Sichtbarer Fokus auch für Elemente ohne eigene Komponente (WCAG 2.4.7). */
+:focus-visible {
+  outline: var(--md-sys-state-focus-indicator-thickness) solid var(--app-focus-ring-color);
+  outline-offset: var(--md-sys-state-focus-indicator-outer-offset);
+}

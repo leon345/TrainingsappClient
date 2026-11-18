@@ -1,0 +1,115 @@
+/*
+ * Bewegungs-Tokens (md.sys.motion.*), Material 3 Expressive.
+ *
+ * 1. Federn (Springs): Dämpfung und Steifigkeit je Bewegungsschema.
+ *    - Standard: material-web _md-sys-motion.scss (M3 34.0.21) und
+ *      Compose StandardMotionTokens.kt.
+ *    - Expressive: Compose ExpressiveMotionTokens.kt.
+ *    CSS kann Federn nicht direkt abspielen. Die Werte stehen hier für
+ *    JavaScript-Animationen (z. B. Gesten) bereit.
+ * 2. Kurven für das Web: m3.material.io, Motion > Specs, Tabelle
+ *    "Web: Convert springs to curves" (cubic-bezier und Dauer je Feder).
+ * 3. Klassische Easing- und Dauer-Tokens (Fallback laut Spezifikation):
+ *    material-web _md-sys-motion.scss.
+ *
+ * Das Schema (expressive oder standard) wird produktweit gewählt, nicht im
+ * Token-Namen (m3.material.io, Motion > How it works). Standard ist hier
+ * expressive; `data-motion-scheme="standard"` am <html> schaltet um.
+ * Siehe docs/design-tokens.md.
+ */
+:root {
+  /* Federn, Schema expressive */
+  --md-sys-motion-spring-fast-spatial-damping: 0.6;
+  --md-sys-motion-spring-fast-spatial-stiffness: 800;
+  --md-sys-motion-spring-default-spatial-damping: 0.8;
+  --md-sys-motion-spring-default-spatial-stiffness: 380;
+  --md-sys-motion-spring-slow-spatial-damping: 0.8;
+  --md-sys-motion-spring-slow-spatial-stiffness: 200;
+  --md-sys-motion-spring-fast-effects-damping: 1;
+  --md-sys-motion-spring-fast-effects-stiffness: 3800;
+  --md-sys-motion-spring-default-effects-damping: 1;
+  --md-sys-motion-spring-default-effects-stiffness: 1600;
+  --md-sys-motion-spring-slow-effects-damping: 1;
+  --md-sys-motion-spring-slow-effects-stiffness: 800;
+
+  /* Web-Kurven, Schema expressive */
+  --md-sys-motion-spring-fast-spatial-easing: cubic-bezier(0.42, 1.67, 0.21, 0.9);
+  --md-sys-motion-spring-fast-spatial-duration: 350ms;
+  --md-sys-motion-spring-default-spatial-easing: cubic-bezier(0.38, 1.21, 0.22, 1);
+  --md-sys-motion-spring-default-spatial-duration: 500ms;
+  --md-sys-motion-spring-slow-spatial-easing: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+  --md-sys-motion-spring-slow-spatial-duration: 650ms;
+  --md-sys-motion-spring-fast-effects-easing: cubic-bezier(0.31, 0.94, 0.34, 1);
+  --md-sys-motion-spring-fast-effects-duration: 150ms;
+  --md-sys-motion-spring-default-effects-easing: cubic-bezier(0.34, 0.8, 0.34, 1);
+  --md-sys-motion-spring-default-effects-duration: 200ms;
+  --md-sys-motion-spring-slow-effects-easing: cubic-bezier(0.34, 0.88, 0.34, 1);
+  --md-sys-motion-spring-slow-effects-duration: 300ms;
+
+  /* Klassische Easing-Tokens (Fallback, z. B. für Übergänge zwischen Ansichten) */
+  --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-legacy: cubic-bezier(0.4, 0, 0.2, 1);
+  --md-sys-motion-easing-legacy-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --md-sys-motion-easing-legacy-decelerate: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Klassische Dauer-Tokens */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+}
+
+/* Schema standard (gleiche Quellen wie oben) */
+:root[data-motion-scheme='standard'] {
+  --md-sys-motion-spring-fast-spatial-damping: 0.9;
+  --md-sys-motion-spring-fast-spatial-stiffness: 1400;
+  --md-sys-motion-spring-default-spatial-damping: 0.9;
+  --md-sys-motion-spring-default-spatial-stiffness: 700;
+  --md-sys-motion-spring-slow-spatial-damping: 0.9;
+  --md-sys-motion-spring-slow-spatial-stiffness: 300;
+
+  --md-sys-motion-spring-fast-spatial-easing: cubic-bezier(0.27, 1.06, 0.18, 1);
+  --md-sys-motion-spring-fast-spatial-duration: 350ms;
+  --md-sys-motion-spring-default-spatial-easing: cubic-bezier(0.27, 1.06, 0.18, 1);
+  --md-sys-motion-spring-default-spatial-duration: 500ms;
+  --md-sys-motion-spring-slow-spatial-easing: cubic-bezier(0.27, 1.06, 0.18, 1);
+  --md-sys-motion-spring-slow-spatial-duration: 750ms;
+  /* Effects-Kurven sind in beiden Schemata gleich. */
+}
+
+/*
+ * Reduzierte Bewegung (eigene Festlegung, keine M3-Vorgabe): räumliche
+ * Bewegung (Position, Größe, Form) springt ohne Animation in den Endzustand.
+ * Farb- und Deckkraftübergänge (effects) bleiben, sie überschwingen nicht.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --md-sys-motion-spring-fast-spatial-duration: 0ms;
+    --md-sys-motion-spring-default-spatial-duration: 0ms;
+    --md-sys-motion-spring-slow-spatial-duration: 0ms;
+  }
+
+  :root[data-motion-scheme='standard'] {
+    --md-sys-motion-spring-fast-spatial-duration: 0ms;
+    --md-sys-motion-spring-default-spatial-duration: 0ms;
+    --md-sys-motion-spring-slow-spatial-duration: 0ms;
+  }
+}

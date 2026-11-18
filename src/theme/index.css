@@ -1,0 +1,12 @@
+/*
+ * Token-Paket Material 3 Expressive (C-06, Entscheidung E2).
+ * Reihenfolge: Tokens zuerst, danach Grundgestaltung und Hilfsklassen.
+ * Übersicht und Herkunft aller Werte: docs/design-tokens.md.
+ */
+@import './tokens/farbe.css';
+@import './tokens/form.css';
+@import './tokens/typografie.css';
+@import './tokens/bewegung.css';
+@import './tokens/hoehe-und-zustand.css';
+@import './basis.css';
+@import './typografie-klassen.css';

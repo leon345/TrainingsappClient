@@ -46,5 +46,13 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    server: {
+      deps: {
+        // Das Paket importiert intern teils ohne Dateiendung (z. B.
+        // '../dynamiccolor/dynamic_scheme'). Node löst das als ESM nicht auf,
+        // Vite schon. Deshalb lässt Vitest es durch Vite laufen.
+        inline: ['@material/material-color-utilities'],
+      },
+    },
   },
 });
