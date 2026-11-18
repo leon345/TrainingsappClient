@@ -4,8 +4,14 @@ import { expect, test, type Page } from '@playwright/test';
  * Visuelle Tests der Kernkomponenten (C-06). Grundlage ist die
  * Komponentengalerie (galerie.html). Referenzbilder liegen unter
  * e2e/visuell.spec.ts-snapshots/, je Browser und Betriebssystem.
+ *
+ * Tests mit Tag `@galerie` brauchen galerie.html und laufen deshalb nur gegen
+ * den Test-Build (Projekte `galerie-*`, E24). Die übrigen Tests (Startseite,
+ * Farbschema) laufen gegen den Produktions-Build.
+ *
  * Neu erzeugen nach gewollten Änderungen:
- *   npx playwright test e2e/visuell.spec.ts --project=chromium --project=firefox --update-snapshots
+ *   npx playwright test e2e/visuell.spec.ts --project=chromium --project=firefox \
+ *     --project=galerie-chromium --project=galerie-firefox --update-snapshots
  */
 
 const ABSCHNITTE = [
@@ -35,17 +41,21 @@ async function oeffneGalerie(page: Page, farbschema: 'light' | 'dark') {
 }
 
 for (const farbschema of ['light', 'dark'] as const) {
-  test.describe(`Komponentengalerie (${farbschema === 'light' ? 'hell' : 'dunkel'})`, () => {
-    for (const abschnitt of ABSCHNITTE) {
-      test(`${abschnitt}`, async ({ page }) => {
-        await oeffneGalerie(page, farbschema);
-        await expect(page.getByTestId(abschnitt)).toHaveScreenshot(`${abschnitt}-${farbschema}.png`);
-      });
-    }
-  });
+  test.describe(
+    `Komponentengalerie (${farbschema === 'light' ? 'hell' : 'dunkel'})`,
+    { tag: '@galerie' },
+    () => {
+      for (const abschnitt of ABSCHNITTE) {
+        test(`${abschnitt}`, async ({ page }) => {
+          await oeffneGalerie(page, farbschema);
+          await expect(page.getByTestId(abschnitt)).toHaveScreenshot(`${abschnitt}-${farbschema}.png`);
+        });
+      }
+    },
+  );
 }
 
-test('Button: Fokusring bei Tastaturbedienung', async ({ page }) => {
+test('Button: Fokusring bei Tastaturbedienung', { tag: '@galerie' }, async ({ page }) => {
   await oeffneGalerie(page, 'light');
   const button = page.getByRole('button', { name: 'Filled' });
   await page.keyboard.press('Tab');
@@ -53,7 +63,7 @@ test('Button: Fokusring bei Tastaturbedienung', async ({ page }) => {
   await expect(page.getByTestId('buttons')).toHaveScreenshot('buttons-fokus-light.png');
 });
 
-test('Textfeld: schwebendes Label im Fokus', async ({ page }) => {
+test('Textfeld: schwebendes Label im Fokus', { tag: '@galerie' }, async ({ page }) => {
   await oeffneGalerie(page, 'light');
   await page.getByRole('textbox', { name: 'Titel' }).focus();
   await expect(page.getByTestId('textfelder')).toHaveScreenshot('textfelder-fokus-light.png', {
@@ -72,7 +82,7 @@ test('Startseite (hell und dunkel)', async ({ page }) => {
   }
 });
 
-test('Roboto wird selbst gehostet geladen', async ({ page, baseURL }) => {
+test('Roboto wird selbst gehostet geladen', { tag: '@galerie' }, async ({ page, baseURL }) => {
   const schriften: string[] = [];
   page.on('request', (anfrage) => {
     if (anfrage.resourceType() === 'font') schriften.push(anfrage.url());
@@ -105,7 +115,7 @@ test('Dunkles Schema folgt der Systemeinstellung und data-theme', async ({ page 
   expect(await flaeche()).toBe(hell);
 });
 
-test('Galerie fragt keine fremden Hosts an', async ({ page, baseURL }) => {
+test('Galerie fragt keine fremden Hosts an', { tag: '@galerie' }, async ({ page, baseURL }) => {
   const eigeneHerkunft = new URL(baseURL!).origin;
   const fremde: string[] = [];
   page.on('request', (anfrage) => {
