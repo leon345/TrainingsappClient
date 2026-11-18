@@ -72,7 +72,7 @@ erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter 
 | Befehl | Zweck |
 | --- | --- |
 | `npm install` | Abhaengigkeiten installieren |
-| `npm run dev` | Dev-Server (http://localhost:5173) |
+| `npm run dev` | Dev-Server, fest auf http://localhost:5173 (`strictPort`); `/v1` per Proxy an den Server auf http://localhost:8080 |
 | `npm run typecheck` | TypeScript-Pruefung (App und Konfiguration/E2E) |
 | `npm run lint` | ESLint (nur Regel: Galerie importiert nur Produktionskomponenten) |
 | `npm run build` | Typpruefung und Produktions-Build nach `dist/` (ohne Galerie) |
@@ -127,9 +127,10 @@ galerie.html          Komponentengalerie (nur im Test-Build, Grundlage der visue
 public/               Statische Dateien (Favicon, PWA-Icons)
 src/main.tsx          Einstieg, rendert <App />
 src/styles.ts         Globale Stile (Schrift, Token-Paket, Rahmen)
-src/App.tsx           Anwendungsrahmen (Startseite: Timer)
+src/App.tsx           Anwendungsrahmen (Startseite: Timer, Umschalter Timer/Konto)
+src/konto/            Konto: API-Schicht, WebAuthn-Aufrufe, Zustandslogik, Ansicht (C-03)
 src/timer/            Intervalltimer: Logik, Einstellung, Hooks, Ansicht (C-02)
-src/format/           Zentraler Dauer-Formatierer (mm:ss / h:mm:ss, E21)
+src/format/           Zentraler Dauer-Formatierer (mm:ss / h:mm:ss, E21), Kalendertag (TT.MM.JJJJ)
 src/theme/            Token-Paket Material 3 Expressive (CSS-Variablen)
 src/components/ui/    Grundkomponenten (Button, IconButton, Icon, Card, TextField, NumberField, CircularProgress)
 src/galerie/          Komponentengalerie
@@ -185,6 +186,34 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
   bei gesperrtem Bildschirm und mit Stummschalter. Die automatischen Tests ersetzen
   AudioContext und `vibrate` durch Attrappen und pruefen nur, was ausgeloest wird.
 
+## Konto und Passkeys (C-03, Prototyp)
+
+- Die Ansicht "Konto" erreicht man ueber die Navigationsleiste unten (Timer / Konto),
+  ohne Routing-Bibliothek. Der Timer bleibt die erste Ansicht und bleibt beim Wechsel
+  eingehaengt (nur verborgen): Ein laufender Timer laeuft samt Ton, Vibration und Wake
+  Lock weiter. Die Navigation steht im DOM hinter dem Inhalt, Tab erreicht zuerst Start.
+- Erst beim Oeffnen der Konto-Ansicht fragt der Client `GET /v1/passkeys`: 200 heisst
+  angemeldet, 401 nicht angemeldet. Der Timer braucht weder Anmeldung noch Server.
+- Nicht angemeldet: Registrieren (Benutzername nach E28, Hinweis zur Namensregel am Feld,
+  wird klein geschrieben gesendet) und Anmelden ohne Benutzernamen (discoverable Passkey).
+- Angemeldet: Passkey-Liste (Bezeichnung nur als Text, erstellt am, zuletzt verwendet bzw.
+  "noch nie"), weiteren Passkey hinzufuegen, Abmelden. Hinweis auf einen zweiten Passkey
+  nach der Registrierung und immer, wenn nur ein Passkey existiert (E3), ausblendbar.
+- Nicht im Prototyp: Umbenennen und Loeschen von Passkeys, Timer-Einstellung auf dem Server.
+- Formate wie der Server-E2E-Test `PasskeyBrowserE2ETest`: Optionen per
+  `PublicKeyCredential.parseCreationOptionsFromJSON` / `parseRequestOptionsFromJSON`,
+  Ergebnis per `credential.toJSON()`. Fehler im Format `FehlerV1`; 429 mit `Retry-After`.
+- Sitzung per HttpOnly-Cookie derselben Origin (E15). Lokal: Server im Dev-Modus auf
+  Port 8080, Client mit `npm run dev` auf Port 5173 (Proxy fuer `/v1`).
+- Der Service Worker beantwortet nichts unter `/v1`: kein Precache, kein Runtime-Caching,
+  Navigationen nach `/v1` bekommen nicht die Startseite (`navigateFallbackDenylist`).
+
+**Bekannte Einschraenkung:** Browser ohne `PublicKeyCredential.parseCreationOptionsFromJSON`,
+`parseRequestOptionsFromJSON` oder `toJSON()` (z. B. aeltere Safari-Versionen) gelten als
+"unterstuetzt keine Passkeys". Die Konto-Ansicht zeigt dann einen Hinweis und sperrt
+Registrieren und Anmelden; eine eigene Umwandlung (Base64URL) gibt es bewusst nicht. Der
+Timer funktioniert dort unveraendert.
+
 ## Funktionstests (C-09)
 
 Alle Tests lokal: `npm test` (Vitest) und `npm run test:e2e` (Playwright, baut beide
@@ -200,8 +229,9 @@ Anzeigen wie `00:09` wackelten unter Last.
 | --- | --- |
 | Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht, Phasensignale), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` und `e2e/phasensignale.spec.ts` (alle vier Browser, Ton und Vibration als Attrappen) |
 | Bedienbar auf dem Smartphone | `e2e/timer.spec.ts` (360 px, Zielflaechen), Projekt `mobile` |
-| Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` |
-| Passkeys, Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-03 bis C-05) |
+| Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` (auch: `/v1` geht am Service Worker vorbei) |
+| Passkeys (C-03) | `src/konto/*.test.ts(x)` (API-Schicht, WebAuthn-Schnittstelle, Benutzername E28, Zustandslogik, Ansicht mit Attrappen fuer API und WebAuthn), `src/App.konto.test.tsx` (Umschalten, Timer laeuft weiter); noch keine E2E-Tests |
+| Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-04, C-05) |
 
 ## Offene Entscheidungen
 
