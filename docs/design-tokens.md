@@ -107,6 +107,7 @@ Fokus, Deaktivierung und die ARIA-Verknüpfungen kommen von dort.
 | `Button` large (C-02) | wie `Button`, Größe large (96 px) | `ButtonLargeTokens` (Commit `1b31f4d`, abgerufen 18.11.2026): `ContainerHeight` 96, `LeadingSpace`/`TrailingSpace` 48, `IconSize` 32, `IconLabelSpace` 12, `ContainerShapeSquare` `CornerExtraLarge`, `PressedContainerShape` `CornerLarge`, `OutlinedOutlineWidth` 2; Textstil headline-small aus `ButtonDefaults.textStyleFor` (96 dp liegt unter `ExtraLargeContainerHeight`). Farben wie die übrigen Größen (Commit `cea944e`) | Form-Morph beim Drücken |
 | `NumberField` (C-02) | ganze Zahlen, Aussehen wie `TextField` (filled), Label, Hilfetext, Fehlertext, deaktiviert | wie `TextField` | schwebendes Label |
 | `CircularProgress` (C-02) | bestimmt, Größe und Dicke wählbar, Inhalt in der Mitte | `CircularProgressIndicatorTokens` (Commit `1b31f4d`, abgerufen 18.11.2026): `ActiveThickness`/`TrackThickness` 4, `TrackActiveSpace` 4, `Size` 40; Farben aus `ProgressIndicatorTokens` über `ProgressIndicatorDefaults.circularColor` (`Primary`) und `circularDeterminateTrackColor` (`SecondaryContainer`); runde Enden aus `CircularDeterminateStrokeCap` (`StrokeCap.Round`). Eigene Festlegung: Abstand wächst bei größerer Dicke mit (gleich der Dicke) | Lücke zwischen Indikator und Spur |
+| `Switch` (C-17) | an/aus, deaktiviert, optionaler Hinweis darunter (per `aria-describedby`) | `SwitchTokens` (Commit `1b31f4d`, abgerufen 18.11.2026, Datei `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SwitchTokens.kt`, VERSION v0_210): `TrackWidth` 52, `TrackHeight` 32, `TrackOutlineWidth` 2, `UnselectedHandleWidth`/`Height` 16, `SelectedHandleWidth`/`Height` 24, `PressedHandleWidth`/`Height` 28, `StateLayerSize` 40, `TrackShape`/`HandleShape`/`StateLayerShape` `CornerFull`; Farben: `SelectedTrackColor` Primary, `SelectedHandleColor` OnPrimary, `Selected{Hover,Focus,Pressed}HandleColor` PrimaryContainer, `UnselectedTrackColor` SurfaceContainerHighest, `UnselectedTrackOutlineColor` Outline, `UnselectedHandleColor` Outline, `Unselected{Hover,Focus,Pressed}HandleColor` OnSurfaceVariant, `DisabledSelectedTrackColor` OnSurface und `DisabledUnselectedTrackColor` SurfaceContainerHighest je mit `DisabledTrackOpacity` 0,12, `DisabledUnselectedTrackOutlineColor` OnSurface (ebenfalls 0,12), `DisabledSelectedHandleColor` Surface (1,0), `DisabledUnselectedHandleColor` OnSurface 0,38. Eigene Festlegungen: Mitte des Griffs 16 px (aus) bzw. 36 px (an) vom linken Rand, d. h. mittig in der Spurhöhe; ohne Icons im Griff; Zeile mindestens 48 px mit Beschriftung links (body-large) und Schalter rechts; Hinweis body-medium in on-surface-variant, auch bei deaktiviertem Schalter nicht abgeblendet (er erklärt den Grund); Beschriftung deaktiviert on-surface 38 % (wie Button); Farbe der Zustandsebene primary (an) bzw. on-surface (aus), in `SwitchTokens` nicht als Token enthalten | – |
 
 Zustände: Zustandsebene mit `md.sys.state.*`-Deckkraft (hover, focus,
 pressed), Fokusring 3 px in `secondary` mit 2 px Abstand (material-web
@@ -114,8 +115,9 @@ pressed), Fokusring 3 px in `secondary` mit 2 px Abstand (material-web
 und Textfelder einen sichtbaren Rand.
 
 Bewusst nicht gebaut (siehe Vorschlag unten): Navigation, Dialoge, Listen,
-Schalter, Snackbar, FAB, Segmented Button, unbestimmte Fortschrittsanzeigen.
-Zahlenfeld, großer Button und kreisförmige Fortschrittsanzeige kamen mit C-02.
+Snackbar, FAB, Segmented Button, unbestimmte Fortschrittsanzeigen.
+Zahlenfeld, großer Button und kreisförmige Fortschrittsanzeige kamen mit C-02,
+der Schalter mit C-17 (Ton und Vibration des Timers).
 Eigene Festlegungen dabei: Timer-Ring 256 px mit Dicke 12 px; Abstand Indikator–Spur
 gleich der Dicke (Verhältnis der Tokens 4/4); Zahlenfeld ohne Plus/Minus-Knöpfe
 (Ziffern-Tastatur, Pfeiltasten).

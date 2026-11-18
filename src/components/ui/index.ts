@@ -10,3 +10,4 @@ export { Card, type CardProps, type CardVariante } from './Card';
 export { TextField, type TextFieldProps } from './TextField';
 export { NumberField, type NumberFieldProps } from './NumberField';
 export { CircularProgress, type CircularProgressProps } from './CircularProgress';
+export { Switch, type SwitchProps } from './Switch';

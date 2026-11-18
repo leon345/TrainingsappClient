@@ -7,6 +7,7 @@ import {
   Icon,
   IconButton,
   NumberField,
+  Switch,
   TextField,
 } from '../components/ui';
 import './Galerie.css';
@@ -230,6 +231,16 @@ export function Galerie() {
             <span className="md-typescale-headline-medium">00:23</span>
           </CircularProgress>
           <CircularProgress value={75} size={160} thickness={12} aria-label="Fortschritt dick" />
+        </div>
+      </Abschnitt>
+
+      <Abschnitt id="schalter" titel="Schalter">
+        <div className="galerie__spalte">
+          <Switch label="An" defaultSelected />
+          <Switch label="Aus" />
+          <Switch label="Mit Hinweis" description="Hinweis unter der Beschriftung" defaultSelected />
+          <Switch label="Deaktiviert an" isDisabled isSelected />
+          <Switch label="Deaktiviert aus" isDisabled description="Grund, warum er deaktiviert ist" />
         </div>
       </Abschnitt>
     </main>

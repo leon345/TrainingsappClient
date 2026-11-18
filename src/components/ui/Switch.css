@@ -1,0 +1,182 @@
+/*
+ * Schalter (Switch), M3. Komponenten-Tokens aus Compose SwitchTokens
+ * (androidx Commit 1b31f4d, abgerufen 18.11.2026): Spur 52 x 32, Rand 2 px,
+ * Griff 16 (aus) / 24 (an) / 28 (gedrückt), Zustandsebene 40 px, Formen
+ * corner-full. Farben siehe docs/design-tokens.md. Ohne Icons im Griff
+ * (Compose-Standard). Anordnung der Zeile ist eigene Festlegung.
+ */
+.md-switch {
+  --_spur: var(--md-sys-color-surface-container-highest);
+  --_rand: var(--md-sys-color-outline);
+  --_griff: var(--md-sys-color-outline);
+  --_griff-groesse: 16px;
+  --_griff-mitte: 16px;
+  --_ebene: var(--md-sys-color-on-surface);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 48px;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.md-switch-feld {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.md-switch__label {
+  min-width: 0;
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+}
+
+.md-switch__hinweis {
+  margin-top: -4px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+
+.md-switch__spur {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--_spur);
+  box-shadow: inset 0 0 0 2px var(--_rand);
+  transition: background-color var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+/* Zustandsebene, 40 px um den Griff */
+.md-switch__spur::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: var(--_griff-mitte);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--_ebene);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition:
+    left var(--md-sys-motion-spring-fast-spatial-duration) var(--md-sys-motion-spring-fast-spatial-easing),
+    opacity var(--md-sys-motion-spring-fast-effects-duration) var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+.md-switch__griff {
+  position: absolute;
+  top: 50%;
+  left: var(--_griff-mitte);
+  width: var(--_griff-groesse);
+  height: var(--_griff-groesse);
+  border-radius: 50%;
+  background: var(--_griff);
+  transform: translate(-50%, -50%);
+  transition:
+    left var(--md-sys-motion-spring-fast-spatial-duration) var(--md-sys-motion-spring-fast-spatial-easing),
+    width var(--md-sys-motion-spring-fast-spatial-duration) var(--md-sys-motion-spring-fast-spatial-easing),
+    height var(--md-sys-motion-spring-fast-spatial-duration) var(--md-sys-motion-spring-fast-spatial-easing),
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+/* An: Spur primary ohne Rand, Griff on-primary 24 px rechts */
+.md-switch[data-selected] {
+  --_spur: var(--md-sys-color-primary);
+  --_rand: transparent;
+  --_griff: var(--md-sys-color-on-primary);
+  --_griff-groesse: 24px;
+  --_griff-mitte: 36px;
+  --_ebene: var(--md-sys-color-primary);
+}
+
+/* Hover, Fokus, gedrückt: Griff on-surface-variant (aus) bzw. primary-container (an) */
+.md-switch:is([data-hovered], [data-focus-visible], [data-pressed]) {
+  --_griff: var(--md-sys-color-on-surface-variant);
+}
+
+.md-switch[data-selected]:is([data-hovered], [data-focus-visible], [data-pressed]) {
+  --_griff: var(--md-sys-color-primary-container);
+}
+
+.md-switch[data-pressed] {
+  --_griff-groesse: 28px;
+}
+
+.md-switch[data-hovered] .md-switch__spur::before {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.md-switch[data-focus-visible] .md-switch__spur::before {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+.md-switch[data-pressed] .md-switch__spur::before {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+
+.md-switch[data-focus-visible] .md-switch__spur {
+  outline: var(--md-sys-state-focus-indicator-thickness) solid var(--app-focus-ring-color);
+  outline-offset: var(--md-sys-state-focus-indicator-outer-offset);
+}
+
+/* Deaktiviert (SwitchTokens): Spur 12 %, Griff aus on-surface 38 %, Griff an surface */
+.md-switch[data-disabled] {
+  --_spur: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 12%, transparent);
+  --_rand: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_griff: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  cursor: default;
+}
+
+.md-switch[data-disabled][data-selected] {
+  --_spur: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_rand: transparent;
+  --_griff: var(--md-sys-color-surface);
+}
+
+.md-switch[data-disabled] .md-switch__label {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.md-switch[data-disabled] .md-switch__spur::before {
+  opacity: 0;
+}
+
+/* Windows-Kontrastmodus: Spur und Griff sichtbar machen */
+@media (forced-colors: active) {
+  .md-switch__spur {
+    outline: 2px solid ButtonText;
+    outline-offset: -2px;
+    box-shadow: none;
+  }
+
+  .md-switch__griff {
+    background: ButtonText;
+  }
+
+  .md-switch[data-selected] .md-switch__griff {
+    background: Highlight;
+  }
+
+  .md-switch[data-disabled] .md-switch__spur {
+    outline-color: GrayText;
+  }
+
+  .md-switch[data-disabled] .md-switch__griff {
+    background: GrayText;
+  }
+}
