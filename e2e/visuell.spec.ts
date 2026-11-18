@@ -26,6 +26,10 @@ const ABSCHNITTE = [
   'farben',
   'typografie',
   'formen',
+  // Timer-Komponenten (C-02)
+  'buttons-gross',
+  'zahlenfelder',
+  'fortschritt',
 ] as const;
 
 async function oeffneGalerie(page: Page, farbschema: 'light' | 'dark') {
@@ -83,6 +87,32 @@ test('Startseite (hell und dunkel)', { tag: '@visuell' }, async ({ page }) => {
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot(`startseite-${farbschema}.png`);
   }
+});
+
+test.describe('Timer auf Smartphone-Größe (C-02)', { tag: '@visuell' }, () => {
+  test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
+
+  for (const farbschema of ['light', 'dark'] as const) {
+    test(`bereit (${farbschema === 'light' ? 'hell' : 'dunkel'})`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: farbschema, reducedMotion: 'reduce' });
+      await page.goto('/');
+      await expect(page.getByRole('timer')).toHaveText('00:30');
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`timer-mobil-${farbschema}.png`, { fullPage: true });
+    });
+  }
+
+  test('läuft, Pause in Runde 1 (hell)', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-11-18T10:00:00Z') });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.clock.runFor(33_000);
+    await expect(page.getByRole('timer')).toHaveText('00:07');
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page).toHaveScreenshot('timer-laeuft-mobil-light.png', { fullPage: true });
+  });
 });
 
 test('Textfeld: Label schwebt bei Fokus nach oben und wird kleiner', { tag: '@galerie' }, async ({

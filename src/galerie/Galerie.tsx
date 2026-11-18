@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react';
-import { Button, Card, ICON_NAMEN, Icon, IconButton, TextField } from '../components/ui';
+import {
+  Button,
+  Card,
+  CircularProgress,
+  ICON_NAMEN,
+  Icon,
+  IconButton,
+  NumberField,
+  TextField,
+} from '../components/ui';
 import './Galerie.css';
 
 /**
@@ -179,6 +188,49 @@ export function Galerie() {
             </li>
           ))}
         </ul>
+      </Abschnitt>
+      {/* Ab hier Komponenten für den Timer (C-02). Neue Abschnitte stehen am
+          Ende, damit die bisherigen Abschnitte unverändert bleiben. */}
+      <Abschnitt id="buttons-gross" titel="Buttons groß">
+        <div className="galerie__reihe">
+          <Button variant="filled" size="large" icon="play_arrow">
+            Start
+          </Button>
+          <Button variant="tonal" size="large" icon="pause">
+            Anhalten
+          </Button>
+        </div>
+        <div className="galerie__reihe">
+          <Button variant="outlined" size="large" shape="square">
+            Eckig
+          </Button>
+          <Button variant="filled" size="large" isDisabled>
+            Deaktiviert
+          </Button>
+        </div>
+      </Abschnitt>
+
+      <Abschnitt id="zahlenfelder" titel="Zahlenfelder">
+        <div className="galerie__spalte">
+          <NumberField label="Training in Sekunden" defaultValue={30} minValue={1} maxValue={86400} description="1 bis 86400" />
+          <NumberField label="Leer" minValue={0} />
+          <NumberField label="Ungültig" defaultValue={0} isInvalid errorMessage="Mindestens 1" />
+          <NumberField label="Deaktiviert" defaultValue={10} isDisabled />
+        </div>
+      </Abschnitt>
+
+      <Abschnitt id="fortschritt" titel="Fortschritt">
+        <div className="galerie__reihe">
+          {[0, 10, 50, 90, 100].map((wert) => (
+            <CircularProgress key={wert} value={wert} aria-label={`Fortschritt ${wert} %`} />
+          ))}
+        </div>
+        <div className="galerie__reihe">
+          <CircularProgress value={25} size={160} thickness={8} aria-label="Fortschritt groß">
+            <span className="md-typescale-headline-medium">00:23</span>
+          </CircularProgress>
+          <CircularProgress value={75} size={160} thickness={12} aria-label="Fortschritt dick" />
+        </div>
       </Abschnitt>
     </main>
   );
