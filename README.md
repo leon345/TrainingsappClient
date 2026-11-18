@@ -103,9 +103,9 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 
 | Playwright-Projekte | Build und Server | Tests |
 | --- | --- | --- |
-| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock; seit C-09 Einstellung per Tastatur, Neuladen im Lauf, gesperrter oder voller `localStorage`), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
+| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock; seit C-09 Einstellung per Tastatur, Neuladen im Lauf, gesperrter oder voller `localStorage`), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema; seit C-03 `e2e/navigation.spec.ts` (Leiste fest unten, verdeckt am Seitenende nichts), `e2e/konto.spec.ts` (Konto mit Server-Attrappe fuer `/v1`, WebAuthn als Attrappe), `e2e/konto-webauthn.spec.ts` (nur Chromium: virtueller Authenticator per CDP, in den anderen Projekten uebersprungen) |
 | `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Textfeld-Label schwebt bei Fokus (gemessene Lage und Groesse, kein Bildvergleich), keine fremden Hosts der Galerie |
-| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell), Galerie-Abschnitt Schalter (C-17) |
+| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell), Galerie-Abschnitt Schalter (C-17), Leiste fest unten (Mobil, hell/dunkel), `e2e/konto-visuell.spec.ts`: Konto-Ansicht in der App mit Server-Attrappe (abgemeldet, zwei Passkeys, ein Passkey mit Hinweis, Server nicht erreichbar; hell/dunkel). Ganzseiten-Aufnahmen loesen die feste Leiste nur fuer die Aufnahme (`e2e/ganzseite.css`) |
 
 Die visuellen Tests laufen nur in Chromium (Vorgabe des Nutzers). Das Aussehen in
 Firefox, WebKit und der Mobil-Emulation wird **nicht** automatisch geprueft; dort
@@ -212,7 +212,9 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
 `parseRequestOptionsFromJSON` oder `toJSON()` (z. B. aeltere Safari-Versionen) gelten als
 "unterstuetzt keine Passkeys". Die Konto-Ansicht zeigt dann einen Hinweis und sperrt
 Registrieren und Anmelden; eine eigene Umwandlung (Base64URL) gibt es bewusst nicht. Der
-Timer funktioniert dort unveraendert.
+Timer funktioniert dort unveraendert. Auch Playwright-WebKit unter Linux (Projekte `webkit`
+und `mobile`) hat diese Funktionen nicht; die E2E-Tests ersetzen WebAuthn dort durch eine
+Attrappe, echte Abfragen laufen nur in Chromium mit virtuellem Authenticator.
 
 ## Funktionstests (C-09)
 
@@ -230,7 +232,7 @@ Anzeigen wie `00:09` wackelten unter Last.
 | Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht, Phasensignale), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` und `e2e/phasensignale.spec.ts` (alle vier Browser, Ton und Vibration als Attrappen) |
 | Bedienbar auf dem Smartphone | `e2e/timer.spec.ts` (360 px, Zielflaechen), Projekt `mobile` |
 | Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` (auch: `/v1` geht am Service Worker vorbei) |
-| Passkeys (C-03) | `src/konto/*.test.ts(x)` (API-Schicht, WebAuthn-Schnittstelle, Benutzername E28, Zustandslogik, Ansicht mit Attrappen fuer API und WebAuthn), `src/App.konto.test.tsx` (Umschalten, Timer laeuft weiter); noch keine E2E-Tests |
+| Passkeys (C-03) | `src/konto/*.test.ts(x)` (API-Schicht, WebAuthn-Schnittstelle, Benutzername E28, Zustandslogik, Ansicht mit Attrappen fuer API und WebAuthn), `src/App.konto.test.tsx` (Umschalten, Timer laeuft weiter); `e2e/konto.spec.ts` (alle vier Browser, Server-Attrappe `e2e/konto-server.ts` nach OpenAPI und Server-Code), `e2e/konto-webauthn.spec.ts` (Chromium, virtueller Authenticator); Durchlauf gegen den echten Server steht aus |
 | Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-04, C-05) |
 
 ## Offene Entscheidungen
