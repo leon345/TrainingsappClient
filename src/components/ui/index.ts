@@ -8,3 +8,5 @@ export { Icon, type IconProps } from './Icon';
 export { ICON_NAMEN, type IconName } from './icons';
 export { Card, type CardProps, type CardVariante } from './Card';
 export { TextField, type TextFieldProps } from './TextField';
+export { NumberField, type NumberFieldProps } from './NumberField';
+export { CircularProgress, type CircularProgressProps } from './CircularProgress';

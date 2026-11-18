@@ -85,6 +85,26 @@
   font-weight: var(--md-sys-typescale-title-medium-weight);
 }
 
+/* Größe large (ButtonLargeTokens): 96 px, Abstand 48 px, Icon 32 px mit
+   12 px Abstand, eckig corner-extra-large, gedrückt corner-large, Rand
+   (outlined) 2 px; Textstil headline-small (ButtonDefaults.textStyleFor). */
+.md-button[data-size='large'] {
+  --_hoehe: 96px;
+  --_abstand: 48px;
+  --_ecke-square: var(--md-sys-shape-corner-extra-large);
+  --_ecke-gedrueckt: var(--md-sys-shape-corner-large);
+  gap: 12px;
+  font-family: var(--md-sys-typescale-headline-small-font);
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+}
+
+.md-button[data-size='large'][data-variant='outlined'] {
+  border-width: 2px;
+}
+
 .md-button[data-shape='square'] {
   border-radius: var(--_ecke-square);
 }

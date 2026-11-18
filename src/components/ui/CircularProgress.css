@@ -1,0 +1,63 @@
+/*
+ * Kreisförmige Fortschrittsanzeige. Farben: Indikator primary, Spur
+ * secondary-container (Compose ProgressIndicatorDefaults). Start oben,
+ * im Uhrzeigersinn.
+ */
+.md-circular-progress {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--_groesse);
+  height: var(--_groesse);
+  flex: none;
+}
+
+.md-circular-progress__balken,
+.md-circular-progress__inhalt {
+  grid-area: 1 / 1;
+}
+
+.md-circular-progress__balken {
+  width: 100%;
+  height: 100%;
+}
+
+.md-circular-progress__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.md-circular-progress__spur,
+.md-circular-progress__indikator {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.md-circular-progress__spur {
+  stroke: var(--md-sys-color-secondary-container);
+}
+
+.md-circular-progress__indikator {
+  stroke: var(--md-sys-color-primary);
+}
+
+.md-circular-progress__inhalt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Windows-Kontrastmodus: Systemfarben, Spur als Rand erkennbar */
+@media (forced-colors: active) {
+  .md-circular-progress__spur {
+    stroke: GrayText;
+  }
+
+  .md-circular-progress__indikator {
+    stroke: Highlight;
+  }
+}

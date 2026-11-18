@@ -1,0 +1,13 @@
+/*
+ * Zahlenfeld: nutzt das Aussehen des Textfelds (TextField.css). Hier nur,
+ * was abweicht: Das Label schwebt, sobald das Feld einen Wert hat (wie
+ * `data-gefuellt` beim Textfeld, hier am Container gesetzt).
+ */
+.md-number-field .md-text-field__container[data-gefuellt] .md-text-field__label {
+  transform: translateY(-8px) scale(0.75);
+}
+
+/* Ziffern gleich breit, damit der Wert beim Tippen nicht springt. */
+.md-number-field .md-text-field__input {
+  font-variant-numeric: tabular-nums;
+}

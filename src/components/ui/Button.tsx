@@ -5,14 +5,14 @@ import type { IconName } from './icons';
 import './Button.css';
 
 export type ButtonVariante = 'filled' | 'tonal' | 'outlined' | 'text';
-export type ButtonGroesse = 'small' | 'medium';
+export type ButtonGroesse = 'small' | 'medium' | 'large';
 export type ButtonForm = 'round' | 'square';
 
 export interface ButtonProps extends Omit<AriaButtonProps, 'children' | 'className' | 'style'> {
   children: ReactNode;
   /** Betonung: filled (höchste) bis text (niedrigste). Standard: filled. */
   variant?: ButtonVariante;
-  /** small = 40 px hoch (M3-Standard), medium = 56 px. */
+  /** small = 40 px hoch (M3-Standard), medium = 56 px, large = 96 px (z. B. Start des Timers). */
   size?: ButtonGroesse;
   /** round = voll gerundet, square = Ecken nach Größe. Gedrückt morpht die Form (Expressive). */
   shape?: ButtonForm;
@@ -20,6 +20,9 @@ export interface ButtonProps extends Omit<AriaButtonProps, 'children' | 'classNa
   icon?: IconName;
   className?: string;
 }
+
+/** Icon-Größe je Button-Größe (ButtonSmall/Medium/LargeTokens). */
+const ICON_GROESSE: Record<ButtonGroesse, number> = { small: 20, medium: 24, large: 32 };
 
 /**
  * M3-Expressive-Button auf Basis von React Aria. Tastatur, Touch, Zeiger,
@@ -42,7 +45,7 @@ export function Button({
       data-size={size}
       data-shape={shape}
     >
-      {icon && <Icon name={icon} size={size === 'medium' ? 24 : 20} />}
+      {icon && <Icon name={icon} size={ICON_GROESSE[size]} />}
       <span className="md-button__label">{children}</span>
     </AriaButton>
   );
