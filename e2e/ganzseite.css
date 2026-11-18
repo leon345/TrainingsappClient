@@ -1,0 +1,16 @@
+/*
+ * Nur für Ganzseiten-Bildvergleiche (e2e/visuell.spec.ts, Option stylePath),
+ * nicht Teil der App.
+ *
+ * Die Navigationsleiste steht in der App fest am unteren Bildschirmrand
+ * (position: sticky). Eine Ganzseiten-Aufnahme setzt die Seite aus
+ * Bildschirmen zusammen; die Leiste erschiene dann mitten im Bild, an der
+ * Unterkante des ersten Bildschirms. Das ist ein Artefakt der Aufnahme, kein
+ * Sollzustand. Für die Aufnahme wird die Leiste deshalb aus dem festen Stand
+ * gelöst und steht am Seitenende. Wie der Benutzer die Leiste sieht, prüft
+ * der Bildvergleich "Navigationsleiste fest am unteren Rand" in
+ * Bildschirmgröße.
+ */
+.app__navigation {
+  position: static !important;
+}

@@ -1,5 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { halteUhrAn } from './uhr';
+
+/**
+ * Für Ganzseiten-Aufnahmen (fullPage): löst die feste Navigationsleiste nur für
+ * die Aufnahme, sonst stünde sie mitten im Bild (Begründung in der Datei).
+ */
+const GANZSEITE = fileURLToPath(new URL('./ganzseite.css', import.meta.url));
 
 /*
  * Visuelle Tests der Kernkomponenten (C-06). Grundlage ist die
@@ -101,7 +108,10 @@ test.describe('Timer auf Smartphone-Größe (C-02)', { tag: '@visuell' }, () => 
       await page.goto('/');
       await expect(page.getByRole('timer')).toHaveText('00:30');
       await page.evaluate(() => document.fonts.ready);
-      await expect(page).toHaveScreenshot(`timer-mobil-${farbschema}.png`, { fullPage: true });
+      await expect(page).toHaveScreenshot(`timer-mobil-${farbschema}.png`, {
+        fullPage: true,
+        stylePath: GANZSEITE,
+      });
     });
   }
 
@@ -117,8 +127,23 @@ test.describe('Timer auf Smartphone-Größe (C-02)', { tag: '@visuell' }, () => 
     await expect(page.getByRole('timer')).toHaveText('00:07');
     await page.mouse.move(0, 0);
     await page.evaluate(() => document.fonts.ready);
-    await expect(page).toHaveScreenshot('timer-laeuft-mobil-light.png', { fullPage: true });
+    await expect(page).toHaveScreenshot('timer-laeuft-mobil-light.png', { fullPage: true, stylePath: GANZSEITE });
   });
+
+  // Bildschirmgröße, keine Ganzseite: So sieht der Benutzer die Leiste, fest
+  // am unteren Rand über dem Inhalt (C-03).
+  for (const farbschema of ['light', 'dark'] as const) {
+    test(`Navigationsleiste fest am unteren Rand (${farbschema === 'light' ? 'hell' : 'dunkel'})`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: farbschema, reducedMotion: 'reduce' });
+      await page.goto('/');
+      await expect(page.getByRole('timer')).toHaveText('00:30');
+      await expect(page.getByRole('navigation', { name: 'Ansicht' })).toBeInViewport();
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page).toHaveScreenshot(`leiste-mobil-${farbschema}.png`);
+    });
+  }
 });
 
 test('Textfeld: Label schwebt bei Fokus nach oben und wird kleiner', { tag: '@galerie' }, async ({
