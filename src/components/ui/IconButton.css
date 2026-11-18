@@ -1,0 +1,37 @@
+/*
+ * Icon-Button, M3 Expressive, Größe small. Tokens aus Compose:
+ * SmallIconButtonTokens (40 px, Icon 24 px, gedrückt corner-small),
+ * IconButtonTokens (standard), FilledIconButtonTokens,
+ * FilledTonalIconButtonTokens, OutlinedIconButtonTokens.
+ * Baut auf .md-button auf (Zustandsebene, Fokus, Form-Morph).
+ */
+.md-icon-button {
+  --_container: transparent;
+  --_inhalt: var(--md-sys-color-on-surface-variant);
+  --_schatten-hover: none;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+.md-icon-button[data-variant='filled'] {
+  --_container: var(--md-sys-color-primary);
+  --_inhalt: var(--md-sys-color-on-primary);
+}
+
+.md-icon-button[data-variant='tonal'] {
+  --_container: var(--md-sys-color-secondary-container);
+  --_inhalt: var(--md-sys-color-on-secondary-container);
+}
+
+.md-icon-button[data-variant='outlined'] {
+  --_rand: var(--md-sys-color-outline-variant);
+}
+
+.md-icon-button[data-disabled] {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.md-icon-button[data-disabled][data-variant='standard'] {
+  background: transparent;
+}

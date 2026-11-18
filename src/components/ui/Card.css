@@ -1,0 +1,26 @@
+/*
+ * Card. Tokens aus Compose: FilledCardTokens (surface-container-highest,
+ * corner-medium), OutlinedCardTokens (surface, outline-variant 1 px,
+ * corner-medium). Innenabstand 16 px ist eigene Festlegung.
+ */
+.md-card {
+  display: block;
+  padding: 16px;
+  border: 1px solid transparent;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.md-card[data-variant='outlined'] {
+  background: var(--md-sys-color-surface);
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.md-card > :first-child {
+  margin-top: 0;
+}
+
+.md-card > :last-child {
+  margin-bottom: 0;
+}

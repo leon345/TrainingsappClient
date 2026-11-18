@@ -6,6 +6,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 // Alle Assets (Schriften, Icons) werden mitgebaut und vom eigenen Server
 // ausgeliefert. Keine fremden CDNs (Entscheidung E2).
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      // Zweite Einstiegsseite: Komponentengalerie fuer visuelle Tests (C-06).
+      input: {
+        main: 'index.html',
+        galerie: 'galerie.html',
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -22,8 +31,9 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#ffffff',
-        theme_color: '#4a4458',
+        // Werte aus src/theme/tokens/farbe.css (hell): surface und surface-container.
+        background_color: '#fdf7fe',
+        theme_color: '#f2ecf5',
         icons: [
           { src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/pwa-512.png', sizes: '512x512', type: 'image/png' },

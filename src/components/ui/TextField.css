@@ -1,0 +1,136 @@
+/*
+ * Textfeld (filled). Tokens aus Compose FilledTextFieldTokens:
+ * Container surface-container-highest, Form corner-extra-small-top,
+ * Indikator on-surface-variant 1 px / Fokus primary 2 px, Label und Eingabe
+ * body-large, Hilfetext body-small, Fehler error. Höhe 56 px und
+ * Innenabstände 16 px sind eigene Festlegung nach dem M3-Erscheinungsbild.
+ */
+.md-text-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.md-text-field__container {
+  position: relative;
+  height: 56px;
+  border-radius: var(--md-sys-shape-corner-extra-small-top);
+  background: var(--md-sys-color-surface-container-highest);
+  box-shadow: inset 0 -1px 0 var(--md-sys-color-on-surface-variant);
+  transition: box-shadow var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+.md-text-field__container::after {
+  /* Zustandsebene beim Überfahren */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--md-sys-color-on-surface);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.md-text-field__container:hover::after {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.md-text-field__label {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transform-origin: left top;
+  transition:
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+/* Schwebendes Label: body-small (12/16 = 0,75) oberhalb der Eingabe */
+.md-text-field:focus-within .md-text-field__label,
+.md-text-field[data-gefuellt] .md-text-field__label {
+  transform: translateY(-8px) scale(0.75);
+}
+
+.md-text-field__input {
+  position: absolute;
+  inset: 24px 16px 8px;
+  width: calc(100% - 32px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  caret-color: var(--md-sys-color-primary);
+  font: inherit;
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  outline: none;
+}
+
+.md-text-field:focus-within .md-text-field__container {
+  box-shadow: inset 0 -2px 0 var(--md-sys-color-primary);
+}
+
+.md-text-field:focus-within .md-text-field__label {
+  color: var(--md-sys-color-primary);
+}
+
+/* Fokus nur per Tastatur zusätzlich mit Fokusring (WCAG 2.4.7) */
+.md-text-field:has(.md-text-field__input[data-focus-visible]) .md-text-field__container {
+  outline: var(--md-sys-state-focus-indicator-thickness) solid var(--app-focus-ring-color);
+  outline-offset: var(--md-sys-state-focus-indicator-outer-offset);
+}
+
+.md-text-field__supporting {
+  padding: 0 16px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
+}
+
+.md-text-field[data-invalid] .md-text-field__container {
+  box-shadow: inset 0 -1px 0 var(--md-sys-color-error);
+}
+
+.md-text-field[data-invalid]:focus-within .md-text-field__container {
+  box-shadow: inset 0 -2px 0 var(--md-sys-color-error);
+}
+
+.md-text-field[data-invalid] .md-text-field__label,
+.md-text-field__error {
+  color: var(--md-sys-color-error);
+}
+
+/* Bei Fehler ersetzt der Fehlertext den Hilfetext. */
+.md-text-field[data-invalid] .md-text-field__supporting:not(.md-text-field__error) {
+  display: none;
+}
+
+.md-text-field[data-disabled] {
+  opacity: 0.38;
+}
+
+.md-text-field[data-disabled] .md-text-field__container::after {
+  opacity: 0;
+}
+
+@media (forced-colors: active) {
+  .md-text-field__container {
+    border: 1px solid CanvasText;
+  }
+}
