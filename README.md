@@ -51,8 +51,14 @@ erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter 
 
 ## Voraussetzungen
 
-- Node.js 22.12 oder neuer (LTS empfohlen), npm
-- Fuer E2E-Tests die Playwright-Browser (siehe unten)
+- Node.js 22.22.2 oder neuer innerhalb von 22.x, 24.15 oder neuer innerhalb von 24.x,
+  oder ab 26 (Vorgabe von jsdom 31), dazu npm
+- Fuer E2E-Tests die Playwright-Browser (siehe unten). `npm run test:e2e:install`
+  installiert auch die Systembibliotheken und braucht dafuer root-Rechte (sudo).
+  Ohne root: `npx playwright install chromium firefox webkit` laedt nur die Browser.
+  Fehlende Bibliotheken muss dann ein Administrator mit
+  `sudo npx playwright install-deps` nachinstallieren (WebKit braucht unter Linux
+  u. a. `libevent`, `libavif` und `libmanette`).
 
 ## Befehle
 
