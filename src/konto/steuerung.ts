@@ -53,7 +53,11 @@ export interface KontoZustand {
   /** Laufende Aktion ("lädt"); währenddessen werden weitere Aktionen ignoriert. */
   laeuft: KontoAktion | null;
   fehler: KontoFehler | null;
-  /** Nach der Registrierung: deutlich zu einem zweiten Passkey auffordern (E3). */
+  /**
+   * Deutlich zu einem zweiten Passkey auffordern (E3): nach der Registrierung
+   * und immer, wenn angemeldet nur ein Passkey existiert, bis der Hinweis
+   * geschlossen wird (gilt bis zur nächsten Anmeldung oder Registrierung).
+   */
   zweitenPasskeyEmpfehlen: boolean;
   webauthnUnterstuetzt: boolean;
 }
@@ -149,6 +153,8 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
     webauthnUnterstuetzt: pb.unterstuetzt(),
   };
   const zuhoerer = new Set<() => void>();
+  let hinweisGeschlossen = false;
+  const empfehlen = (liste: readonly Passkey[]): boolean => !hinweisGeschlossen && liste.length < 2;
 
   function setze(teil: Partial<KontoZustand>): void {
     zustand = { ...zustand, ...teil };
@@ -188,10 +194,11 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
   }
 
   /** Nach erfolgreicher Anmeldung bzw. Registrierung: Liste laden. */
-  async function angemeldetMitListe(teil: Partial<KontoZustand>): Promise<void> {
-    setze({ ...teil, status: 'angemeldet', passkeys: null });
+  async function angemeldetMitListe(nachRegistrierung: boolean): Promise<void> {
+    hinweisGeschlossen = false;
+    setze({ status: 'angemeldet', passkeys: null, zweitenPasskeyEmpfehlen: nachRegistrierung });
     const liste = await api.passkeys();
-    setze({ passkeys: liste, laeuft: null });
+    setze({ passkeys: liste, laeuft: null, zweitenPasskeyEmpfehlen: empfehlen(liste) });
   }
 
   function brauchtWebAuthn(): void {
@@ -212,7 +219,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
       aktion('pruefen', async () => {
         try {
           const liste = await api.passkeys();
-          setze({ status: 'angemeldet', passkeys: liste, laeuft: null });
+          setze({ status: 'angemeldet', passkeys: liste, laeuft: null, zweitenPasskeyEmpfehlen: empfehlen(liste) });
         } catch (fehler) {
           if (!istStatus(fehler, 401)) throw fehler;
           setze({ ...abgemeldet, laeuft: null });
@@ -232,7 +239,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
         const optionen = await api.registrierungsOptionen(name);
         const credential = await pb.erzeugen(optionen);
         await api.registrieren(name, credential);
-        await angemeldetMitListe({ zweitenPasskeyEmpfehlen: true });
+        await angemeldetMitListe(true);
       });
     },
 
@@ -242,7 +249,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
         const optionen = await api.anmeldeOptionen();
         const credential = await pb.abrufen(optionen);
         await api.anmelden(credential);
-        await angemeldetMitListe({ zweitenPasskeyEmpfehlen: false });
+        await angemeldetMitListe(false);
       }),
 
     passkeyHinzufuegen: () =>
@@ -253,7 +260,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
         await api.passkeyHinzufuegen(credential);
         setze({ zweitenPasskeyEmpfehlen: false });
         const liste = await api.passkeys();
-        setze({ passkeys: liste, laeuft: null });
+        setze({ passkeys: liste, laeuft: null, zweitenPasskeyEmpfehlen: empfehlen(liste) });
       }),
 
     abmelden: () =>
@@ -264,6 +271,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
           // 401: Sitzung war schon weg, Ziel erreicht.
           if (!istStatus(fehler, 401)) throw fehler;
         }
+        hinweisGeschlossen = false;
         setze({ ...abgemeldet, laeuft: null });
       }),
 
@@ -272,6 +280,7 @@ export function erzeugeKontoSteuerung(abh: KontoAbhaengigkeiten = {}): KontoSteu
     },
 
     hinweisSchliessen() {
+      hinweisGeschlossen = true;
       if (zustand.zweitenPasskeyEmpfehlen) setze({ zweitenPasskeyEmpfehlen: false });
     },
   };

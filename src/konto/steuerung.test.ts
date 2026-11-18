@@ -79,7 +79,19 @@ describe('Anfangszustand und Prüfen per GET /v1/passkeys', () => {
     const { steuerung, z, api } = aufbau();
     api.passkeys.mockResolvedValueOnce([PASSKEY_1, PASSKEY_2]);
     await expect(steuerung.pruefen()).resolves.toBe(true);
-    expect(z()).toMatchObject({ status: 'angemeldet', passkeys: [PASSKEY_1, PASSKEY_2], laeuft: null, fehler: null });
+    expect(z()).toMatchObject({
+      status: 'angemeldet',
+      passkeys: [PASSKEY_1, PASSKEY_2],
+      laeuft: null,
+      fehler: null,
+      zweitenPasskeyEmpfehlen: false,
+    });
+  });
+
+  it('200 mit nur einem Passkey: Hinweis auf zweiten Passkey', async () => {
+    const { steuerung, z } = aufbau();
+    await steuerung.pruefen();
+    expect(z().zweitenPasskeyEmpfehlen).toBe(true);
   });
 
   it('401: abgemeldet ohne Fehler', async () => {
@@ -251,18 +263,36 @@ describe('Registrieren', () => {
 });
 
 describe('Anmelden', () => {
-  it('Erfolg: Optionen, get, Abschluss, Liste; kein Hinweis auf zweiten Passkey', async () => {
+  it('Erfolg: Optionen, get, Abschluss, Liste; mit zwei Passkeys kein Hinweis auf zweiten Passkey', async () => {
     const { steuerung, z, api, pb } = await abgemeldet();
+    api.passkeys.mockResolvedValueOnce([PASSKEY_1, PASSKEY_2]);
     await expect(steuerung.anmelden()).resolves.toBe(true);
     expect(pb.abrufen).toHaveBeenCalledWith(ABRUF_OPTIONEN);
     expect(api.anmelden).toHaveBeenCalledWith(ANMELDE_CREDENTIAL);
     expect(z()).toMatchObject({
       status: 'angemeldet',
-      passkeys: [PASSKEY_1],
+      passkeys: [PASSKEY_1, PASSKEY_2],
       laeuft: null,
       fehler: null,
       zweitenPasskeyEmpfehlen: false,
     });
+  });
+
+  it('Erfolg mit nur einem Passkey: Hinweis auf zweiten Passkey (E3, Nutzerentscheid)', async () => {
+    const { steuerung, z } = await abgemeldet();
+    await steuerung.anmelden();
+    expect(z()).toMatchObject({ status: 'angemeldet', passkeys: [PASSKEY_1], zweitenPasskeyEmpfehlen: true });
+  });
+
+  it('geschlossener Hinweis bleibt beim erneuten Prüfen zu, nach neuer Anmeldung wieder da', async () => {
+    const { steuerung, z } = await abgemeldet();
+    await steuerung.anmelden();
+    steuerung.hinweisSchliessen();
+    await steuerung.pruefen();
+    expect(z().zweitenPasskeyEmpfehlen).toBe(false);
+    await steuerung.abmelden();
+    await steuerung.anmelden();
+    expect(z().zweitenPasskeyEmpfehlen).toBe(true);
   });
 
   it('lädt: laeuft = anmelden', async () => {
