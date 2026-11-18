@@ -216,6 +216,26 @@ Timer funktioniert dort unveraendert. Auch Playwright-WebKit unter Linux (Projek
 und `mobile`) hat diese Funktionen nicht; die E2E-Tests ersetzen WebAuthn dort durch eine
 Attrappe, echte Abfragen laufen nur in Chromium mit virtuellem Authenticator.
 
+## Prototyp lokal starten
+
+1. Server (Repo TrainingsappServer, Java 21, Maven, Docker): `mvn quarkus:dev`. Er laeuft auf
+   `http://localhost:8080`; Dev Services startet eine PostgreSQL im Container. Das Dev-Profil
+   erlaubt die Origin `http://localhost:5173` (Server-Doku `docs/prototyp-lokal.md`).
+2. Client: `npm run dev` (fest Port 5173, `/v1` per Proxy an Port 8080).
+3. Im Browser `http://localhost:5173` oeffnen. Passkeys funktionieren nur unter `localhost`,
+   nicht unter `127.0.0.1` oder einer LAN-Adresse (rpId `localhost`).
+
+Die Dev-Datenbank ist fluechtig: Nach einem Neustart des Servers sind alle Konten weg. Ein im
+Browser bzw. Passwortmanager gespeicherter Passkey passt dann zu keinem Konto mehr; neu
+registrieren.
+
+Integrationstest gegen den echten Server (nur Chromium, virtuelle Authenticatoren, keine
+abgefangenen Antworten): Server wie oben starten, dann `npm run test:e2e:integration`
+(`playwright.integration.config.ts`, Ordner `e2e-integration/`; startet den Dev-Server selbst,
+falls er nicht laeuft). Der normale Lauf `npm run test:e2e` enthaelt ihn nicht. Er prueft:
+Registrieren, zweiter Passkey, Abmelden, Anmelden ohne Benutzernamen, Sitzung nach Neuladen,
+Timer, gleicher Name in frischem Browser ergibt "vergeben".
+
 ## Funktionstests (C-09)
 
 Alle Tests lokal: `npm test` (Vitest) und `npm run test:e2e` (Playwright, baut beide
@@ -232,7 +252,7 @@ Anzeigen wie `00:09` wackelten unter Last.
 | Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht, Phasensignale), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` und `e2e/phasensignale.spec.ts` (alle vier Browser, Ton und Vibration als Attrappen) |
 | Bedienbar auf dem Smartphone | `e2e/timer.spec.ts` (360 px, Zielflaechen), Projekt `mobile` |
 | Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` (auch: `/v1` geht am Service Worker vorbei) |
-| Passkeys (C-03) | `src/konto/*.test.ts(x)` (API-Schicht, WebAuthn-Schnittstelle, Benutzername E28, Zustandslogik, Ansicht mit Attrappen fuer API und WebAuthn), `src/App.konto.test.tsx` (Umschalten, Timer laeuft weiter); `e2e/konto.spec.ts` (alle vier Browser, Server-Attrappe `e2e/konto-server.ts` nach OpenAPI und Server-Code), `e2e/konto-webauthn.spec.ts` (Chromium, virtueller Authenticator); Durchlauf gegen den echten Server steht aus |
+| Passkeys (C-03) | `src/konto/*.test.ts(x)` (API-Schicht, WebAuthn-Schnittstelle, Benutzername E28, Zustandslogik, Ansicht mit Attrappen fuer API und WebAuthn), `src/App.konto.test.tsx` (Umschalten, Timer laeuft weiter); `e2e/konto.spec.ts` (alle vier Browser, Server-Attrappe `e2e/konto-server.ts` nach OpenAPI und Server-Code), `e2e/konto-webauthn.spec.ts` (Chromium, virtueller Authenticator); Durchlauf gegen den echten Server: `e2e-integration/` (siehe "Prototyp lokal starten") |
 | Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-04, C-05) |
 
 ## Offene Entscheidungen
