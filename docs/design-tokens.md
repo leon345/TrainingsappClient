@@ -103,6 +103,9 @@ Fokus, Deaktivierung und die ARIA-Verknüpfungen kommen von dort.
 | `Icon` | 17 Material Symbols (Rounded, 400) | Größe 24 px | – |
 | `Card` | filled, outlined; wählbares HTML-Element | `FilledCardTokens`, `OutlinedCardTokens` | – |
 | `TextField` | filled; Label, Hilfetext, Fehlertext, deaktiviert | `FilledTextFieldTokens` | schwebendes Label mit Feder "fast spatial" |
+| `Button` large (C-02) | wie `Button`, Größe large (96 px) | `ButtonLargeTokens` (androidx-main, abgerufen 18.11.2026): Höhe 96, Abstand 48, Icon 32, Icon-Abstand 12, eckig `corner-extra-large`, gedrückt `corner-large`, Rand 2; Textstil headline-small | Form-Morph beim Drücken |
+| `NumberField` (C-02) | ganze Zahlen, Aussehen wie `TextField` (filled), Label, Hilfetext, Fehlertext, deaktiviert | wie `TextField` | schwebendes Label |
+| `CircularProgress` (C-02) | bestimmt, Größe und Dicke wählbar, Inhalt in der Mitte | `CircularProgressIndicatorTokens` (androidx-main): Dicke 4, Abstand Indikator–Spur 4, Größe 40; Farben primary / secondary-container; runde Enden | Lücke zwischen Indikator und Spur |
 
 Zustände: Zustandsebene mit `md.sys.state.*`-Deckkraft (hover, focus,
 pressed), Fokusring 3 px in `secondary` mit 2 px Abstand (material-web
@@ -110,7 +113,11 @@ pressed), Fokusring 3 px in `secondary` mit 2 px Abstand (material-web
 und Textfelder einen sichtbaren Rand.
 
 Bewusst nicht gebaut (siehe Vorschlag unten): Navigation, Dialoge, Listen,
-Schalter, Zahlenfelder, Snackbar, FAB, Fortschrittsanzeigen.
+Schalter, Snackbar, FAB, Segmented Button, unbestimmte Fortschrittsanzeigen.
+Zahlenfeld, großer Button und kreisförmige Fortschrittsanzeige kamen mit C-02.
+Eigene Festlegungen dabei: Timer-Ring 256 px mit Dicke 12 px; Abstand Indikator–Spur
+gleich der Dicke (Verhältnis der Tokens 4/4); Zahlenfeld ohne Plus/Minus-Knöpfe
+(Ziffern-Tastatur, Pfeiltasten).
 
 ### Vorschlag für Folgetasks
 

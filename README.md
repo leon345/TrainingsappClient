@@ -2,7 +2,8 @@
 
 Frontend der Trainingsapp (Intervalltimer und Workout-Tracking). Das zugehoerige Backend liegt in [TrainingsappServer](https://github.com/leon345/TrainingsappServer).
 
-Status: Grundgeruest steht (Build, PWA, Tests). Fachfunktionen folgen.
+Status: Grundgeruest steht (Build, PWA, Tests). Intervalltimer (C-02) ist die Startseite;
+weitere Fachfunktionen folgen.
 
 ## Muss-Kriterien
 
@@ -102,9 +103,9 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 
 | Playwright-Projekte | Build und Server | Tests |
 | --- | --- | --- |
-| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/app.spec.ts` (Startseite und Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
+| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
 | `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Textfeld-Label schwebt bei Fokus (gemessene Lage und Groesse, kein Bildvergleich), keine fremden Hosts der Galerie |
-| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel |
+| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell) |
 
 Die visuellen Tests laufen nur in Chromium (Vorgabe des Nutzers). Das Aussehen in
 Firefox, WebKit und der Mobil-Emulation wird **nicht** automatisch geprueft; dort
@@ -126,10 +127,11 @@ galerie.html          Komponentengalerie (nur im Test-Build, Grundlage der visue
 public/               Statische Dateien (Favicon, PWA-Icons)
 src/main.tsx          Einstieg, rendert <App />
 src/styles.ts         Globale Stile (Schrift, Token-Paket, Rahmen)
-src/App.tsx           Anwendungsrahmen
+src/App.tsx           Anwendungsrahmen (Startseite: Timer)
+src/timer/            Intervalltimer: Logik, Einstellung, Hooks, Ansicht (C-02)
+src/format/           Zentraler Dauer-Formatierer (mm:ss / h:mm:ss, E21)
 src/theme/            Token-Paket Material 3 Expressive (CSS-Variablen)
-src/components/ui/    Grundkomponenten (Button, IconButton, Icon, Card, TextField)
-src/components/       Weitere Komponenten (BeispielButton)
+src/components/ui/    Grundkomponenten (Button, IconButton, Icon, Card, TextField, NumberField, CircularProgress)
 src/galerie/          Komponentengalerie
 docs/                 Design-Tokens und Komponentenumfang
 src/test/setup.ts     Vitest-Setup (jest-dom-Matcher)
@@ -138,6 +140,26 @@ vite.config.ts        Vite-, PWA- und Vitest-Konfiguration (Mode `test`: mit Gal
 playwright.config.ts  Playwright-Projekte und Webserver (Produktions- und Test-Build)
 eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
 ```
+
+## Intervalltimer (C-02)
+
+- Trainings- und Pausenzeit in ganzen Sekunden, Standard 30 s / 10 s (E20). Grenzen
+  wie im Server: Training 1 bis 86400 s, Pause 0 bis 86400 s (0 = keine Pause).
+  Werte ausserhalb werden beim Verlassen des Felds auf die Grenze gesetzt.
+- Die Einstellung wird nur lokal gespeichert (`localStorage`, Schluessel
+  `trainingsapp.timer.einstellung.v1`). Der Abgleich mit dem Server folgt mit S-02b (E10).
+- Runden (Training plus Pause) wiederholen sich, bis der Benutzer anhaelt. Kein Ton,
+  keine Vibration. Der Laufzustand wird nicht gespeichert; Neuladen setzt zurueck.
+- Die Restzeit wird aus Zeitstempeln (`Date.now`) berechnet, nicht aus Takten (E1).
+  Der Takt (250 ms) loest nur das Neuzeichnen aus. Logik ohne Browser in
+  `src/timer/logik.ts`, getestet mit kontrollierter Uhr.
+- Waehrend der Timer laeuft, wird eine Screen-Wake-Lock-Sperre angefordert und nach
+  Rueckkehr in den Vordergrund erneuert. Fehlt die API oder wird sie abgelehnt, laeuft
+  der Timer trotzdem korrekt, nur kann der Bildschirm ausgehen.
+- Anzeige ueber den zentralen Formatierer `src/format/dauer.ts`; Screenreader hoeren die
+  Restzeit in Worten (`role="timer"`) und eine Ansage nur beim Phasenwechsel.
+- Nicht geprueft: Verhalten in echtem iOS-Safari bei gesperrtem Bildschirm und ob Wake
+  Lock auf echten Geraeten greift (C-01b).
 
 ## Offene Entscheidungen
 
