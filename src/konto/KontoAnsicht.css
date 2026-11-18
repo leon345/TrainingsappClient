@@ -2,11 +2,19 @@
  * Konto (C-03), mobil zuerst: Karten untereinander, ab 840 px nebeneinander.
  */
 .konto {
-  display: grid;
-  gap: 1rem;
+  display: block;
 }
 
-.konto__titel {
+/*
+ * Abstände per Rand statt grid-gap: Die Live-Regionen (Status, Fehler) sind
+ * immer im DOM, damit Screenreader neue Inhalte ansagen. Leer sollen sie
+ * keinen Platz einnehmen. Block-Layout, damit Buttons nicht gestreckt werden.
+ */
+.konto > * {
+  margin: 0 0 1rem;
+}
+
+.konto > :empty {
   margin: 0;
 }
 
@@ -16,16 +24,11 @@
 }
 
 .konto__status {
-  margin: 0;
-  min-height: 1.25rem;
   color: var(--md-sys-color-on-surface-variant);
 }
 
-.konto__status:empty {
-  min-height: 0;
-}
-
-.konto__fehler {
+/* Spezifischer als .md-card[data-variant='outlined'], sonst bliebe der Rand grau. */
+.md-card.konto__fehler {
   border-color: var(--md-sys-color-error);
   color: var(--md-sys-color-on-surface);
 }
@@ -57,6 +60,11 @@
 .konto__empfehlung {
   background: var(--md-sys-color-tertiary-container);
   color: var(--md-sys-color-on-tertiary-container);
+}
+
+/* Text-Button auf dem Container: Farbe des Containers statt primary (Kontrast, v. a. im dunklen Schema). */
+.konto__empfehlung .md-button[data-variant='text'] {
+  --_inhalt: var(--md-sys-color-on-tertiary-container);
 }
 
 .konto__liste {
