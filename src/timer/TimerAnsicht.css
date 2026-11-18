@@ -34,6 +34,49 @@
   color: var(--md-sys-color-primary);
 }
 
+/*
+ * Sichtbares Phasensignal (C-17): Text und Farbe, Farbpaare aus den
+ * M3-Rollen (Container/On-Container), Kontrast in allen Schemata geprüft
+ * (src/theme/farbschema.test.ts). Die Farbe ist nie der einzige Träger:
+ * Der Text nennt die Phase. Platz ist auch leer reserviert, damit beim
+ * Start nichts springt.
+ */
+.timer__signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin: 1rem 0 0;
+  padding: 4px 16px;
+  border-radius: var(--md-sys-shape-corner-small);
+  transition:
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+.timer__signal[data-signal='training'] {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.timer__signal[data-signal='pause'] {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.timer__signal[data-signal='angehalten'] {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+@media (forced-colors: active) {
+  .timer__signal:not([data-signal='leer']) {
+    border: 1px solid CanvasText;
+  }
+}
+
 .timer__steuerung {
   display: flex;
   flex-wrap: wrap;
@@ -55,6 +98,15 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.timer__signal-titel {
+  margin: 1.5rem 0 0.25rem;
+}
+
+.timer__schalter {
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 840px) {
