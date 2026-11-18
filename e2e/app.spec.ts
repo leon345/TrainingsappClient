@@ -10,6 +10,17 @@ test('Startseite zeigt Titel und bedienbaren Button', async ({ page }) => {
   await expect(page.getByRole('status')).toHaveText('1-mal angetippt');
 });
 
+test('Tab setzt den Tastaturfokus auf den ersten Button', async ({ page }) => {
+  // Funktions- und Barrierefreiheitsprüfung ohne Bildvergleich, alle Browser.
+  // Der Fokusring selbst wird nur in Chromium per Bildvergleich geprüft.
+  await page.goto('/');
+  const button = page.getByRole('button', { name: 'Antippen' });
+  await expect(button).toBeVisible();
+
+  await page.keyboard.press('Tab');
+  await expect(button).toBeFocused();
+});
+
 test('Layout passt ohne horizontales Scrollen in den Viewport', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

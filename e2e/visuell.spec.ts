@@ -85,14 +85,55 @@ test('Startseite (hell und dunkel)', { tag: '@visuell' }, async ({ page }) => {
   }
 });
 
-test('Roboto wird selbst gehostet geladen', { tag: '@galerie' }, async ({ page, baseURL }) => {
+test('Textfeld: Label schwebt bei Fokus nach oben und wird kleiner', { tag: '@galerie' }, async ({
+  page,
+}) => {
+  // Funktionale Prüfung ohne Bildvergleich, läuft in allen Browsern gegen den
+  // Test-Build. Gemessen wird die Lage des Labels (getBoundingClientRect
+  // berücksichtigt transform), keine Stilwerte.
+  await oeffneGalerie(page, 'light');
+  const feld = page.getByRole('textbox', { name: 'Titel' });
+  const label = page.getByText('Titel', { exact: true });
+  const lage = async () => {
+    const box = await label.boundingBox();
+    expect(box).not.toBeNull();
+    return box!;
+  };
+
+  const vorher = await lage();
+  await feld.focus();
+  await expect(feld).toBeFocused();
+  await expect
+    .poll(async () => {
+      const nachher = await lage();
+      return nachher.y < vorher.y - 4 && nachher.height < vorher.height * 0.9;
+    })
+    .toBe(true);
+});
+
+test('Roboto wird selbst gehostet geladen und verwendet', async ({ page, baseURL }) => {
+  // Gegen den Produktions-Build (Startseite, E24). Die Schrift wird hier
+  // nicht per document.fonts.load erzwungen: Sie muss durch die Seite selbst
+  // geladen werden.
   const schriften: string[] = [];
   page.on('request', (anfrage) => {
     if (anfrage.resourceType() === 'font') schriften.push(anfrage.url());
   });
-  await oeffneGalerie(page, 'light');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Trainingsapp' })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
 
-  expect(await page.evaluate(() => document.fonts.check('16px "Roboto Variable"'))).toBe(true);
+  const geladen = await page.evaluate(() =>
+    [...document.fonts].some(
+      (schrift) => schrift.family.replace(/["']/g, '') === 'Roboto Variable' && schrift.status === 'loaded',
+    ),
+  );
+  expect(geladen).toBe(true);
+  const schriftfamilie = await page
+    .getByRole('heading', { level: 1 })
+    .evaluate((element) => getComputedStyle(element).fontFamily);
+  expect(schriftfamilie.replace(/["']/g, '')).toMatch(/^Roboto Variable\b/);
+
   expect(schriften.length).toBeGreaterThan(0);
   for (const url of schriften) {
     expect(new URL(url).origin).toBe(new URL(baseURL!).origin);

@@ -102,13 +102,16 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 
 | Playwright-Projekte | Build und Server | Tests |
 | --- | --- | --- |
-| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/app.spec.ts` (Startseite und Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), dunkles Schema aus `e2e/visuell.spec.ts` |
-| `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Roboto selbst gehostet, keine fremden Hosts der Galerie |
+| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/app.spec.ts` (Startseite und Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
+| `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Textfeld-Label schwebt bei Fokus (gemessene Lage und Groesse, kein Bildvergleich), keine fremden Hosts der Galerie |
 | `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel |
 
 Die visuellen Tests laufen nur in Chromium (Vorgabe des Nutzers). Das Aussehen in
 Firefox, WebKit und der Mobil-Emulation wird **nicht** automatisch geprueft; dort
-laufen nur die funktionalen Tests. Referenzbilder gibt es nur fuer Chromium unter
+laufen nur die funktionalen Tests. Funktionale Aussagen aus Bildvergleichen sind
+zusaetzlich ohne Bild in allen Browsern abgedeckt: Tab-Fokus auf den ersten Button
+(Startseite) und schwebendes Textfeld-Label (Galerie). Nur in Chromium geprueft
+werden das Aussehen, etwa Fokusring, Farben und Schrift-Darstellung. Referenzbilder gibt es nur fuer Chromium unter
 Linux (`e2e/visuell.spec.ts-snapshots/*-chromium-linux.png`).
 
 Damit die Galerie nur zeigt, was ausgeliefert wird, erlaubt eine ESLint-Regel
