@@ -2,7 +2,7 @@
 
 Frontend der Trainingsapp (Intervalltimer und Workout-Tracking). Das zugehoerige Backend liegt in [TrainingsappServer](https://github.com/leon345/TrainingsappServer).
 
-Status: Planung. Die Frontend-Technik ist noch nicht entschieden.
+Status: Grundgeruest steht (Build, PWA, Tests). Fachfunktionen folgen.
 
 ## Muss-Kriterien
 
@@ -24,7 +24,72 @@ Status: Planung. Die Frontend-Technik ist noch nicht entschieden.
 - Schwimm-Workouts: Bahnen, Zeit pro Bahn, Schwimmtechnik
 - Teilen der Trainingsdaten mit Apple Health (setzt eine native iOS-App voraus)
 
+## Stack
+
+| Bereich | Technik |
+| --- | --- |
+| UI | React 19, TypeScript |
+| Build und Dev-Server | Vite |
+| PWA | `vite-plugin-pwa` (Web-App-Manifest, Service Worker per Workbox, automatische Aktualisierung) |
+| Bedienelemente | React Aria Components (Barrierefreiheit, kein eigenes Aussehen) |
+| Unit-Tests | Vitest mit jsdom und Testing Library |
+| E2E-Tests | Playwright: Chromium, Firefox, WebKit und Mobil-Emulation (iPhone, WebKit) |
+| Paketmanager | npm (`package-lock.json` gehoert ins Repo) |
+
+Eine Codebasis fuer Mobil und Desktop: Das Layout ist mobil zuerst aufgebaut und
+erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter (C-11).
+
+### Regeln
+
+- Keine fremden CDNs. Schriften und Icons werden selbst gehostet, also als npm-Paket
+  mitgebaut oder als Datei unter `public/` abgelegt. Ein E2E-Test prueft, dass die
+  Startseite keine fremden Hosts anfragt.
+- Kein `@material/web`. Design-Tokens nach Material 3 Expressive kommen als eigene
+  CSS-Variablen (C-06). Bis dahin nutzt die App Systemschriften.
+- Dauern werden projektweit in ganzen Sekunden als Integer gefuehrt (`dauerSekunden`,
+  `pauseSekunden`), kein ISO-8601.
+
+## Voraussetzungen
+
+- Node.js 22.12 oder neuer (LTS empfohlen), npm
+- Fuer E2E-Tests die Playwright-Browser (siehe unten)
+
+## Befehle
+
+| Befehl | Zweck |
+| --- | --- |
+| `npm install` | Abhaengigkeiten installieren |
+| `npm run dev` | Dev-Server (http://localhost:5173) |
+| `npm run typecheck` | TypeScript-Pruefung (App und Konfiguration/E2E) |
+| `npm run build` | Typpruefung und Produktions-Build nach `dist/` |
+| `npm run preview` | Produktions-Build lokal ausliefern (http://localhost:4173) |
+| `npm test` | Unit-Tests (Vitest), einmaliger Lauf |
+| `npm run test:watch` | Unit-Tests im Watch-Modus |
+| `npm run test:e2e:install` | Playwright-Browser samt Systemabhaengigkeiten installieren |
+| `npm run test:e2e` | E2E-Tests in allen vier Projekten (baut vorher und startet `vite preview`) |
+| `npx playwright test --project=chromium` | E2E-Tests nur in einem Projekt (`chromium`, `firefox`, `webkit`, `mobile`) |
+
+Der Service Worker ist nur im Produktions-Build aktiv (`npm run build` und
+`npm run preview`), nicht im Dev-Server.
+
+## Projektstruktur
+
+```
+index.html            Einstiegsseite
+public/               Statische Dateien (Favicon, PWA-Icons)
+src/main.tsx          Einstieg, rendert <App />
+src/App.tsx           Anwendungsrahmen
+src/components/       Komponenten (derzeit eine React-Aria-Beispielkomponente)
+src/test/setup.ts     Vitest-Setup (jest-dom-Matcher)
+e2e/                  Playwright-Tests
+vite.config.ts        Vite-, PWA- und Vitest-Konfiguration
+playwright.config.ts  Playwright-Projekte und Webserver
+```
+
 ## Offene Entscheidungen
 
-- Frontend-Technik (PWA, Kotlin Multiplatform, Flutter o. a.)
-- Umsetzung von Material 3 Expressive in der gewaehlten Technik
+- Umsetzung von Material 3 Expressive: Entschieden ist ein eigenes Token-Paket mit
+  CSS-Variablen auf Basis von React Aria (ohne `@material/web`). Die Ausgestaltung
+  folgt in C-06.
+- Pruefung auf iOS-Geraet (Spike C-01b): Timer bei gesperrtem Bildschirm, Passkeys im
+  Capacitor-WebView.
