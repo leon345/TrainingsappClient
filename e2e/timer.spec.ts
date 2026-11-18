@@ -283,3 +283,97 @@ test.describe('Wake Lock', () => {
     await expect(zeit(page)).toHaveText('00:27');
   });
 });
+
+/*
+ * Ergänzungen C-09: Tastaturbedienung der Einstellung, Neuladen im Lauf und
+ * Browser, in denen localStorage gesperrt oder voll ist.
+ */
+test.describe('Einstellung per Tastatur (C-09)', () => {
+  test('Tab erreicht die Felder, Pfeiltasten ändern den Wert, er bleibt gespeichert', async ({ page }) => {
+    await oeffneTimer(page);
+    const training = page.getByRole('textbox', { name: 'Training in Sekunden' });
+    const pause = page.getByRole('textbox', { name: 'Pause in Sekunden' });
+
+    // Reihenfolge: Start, (Zurücksetzen ist im Zustand "bereit" deaktiviert), Training, Pause.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Start' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(training).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await expect(training).toHaveValue('32');
+
+    await page.keyboard.press('Tab');
+    await expect(pause).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(pause).toHaveValue('9');
+    await expect(zeit(page)).toHaveText('00:32');
+
+    await page.reload();
+    await expect(training).toHaveValue('32');
+    await expect(pause).toHaveValue('9');
+  });
+});
+
+test('Neuladen während des Laufs setzt den Timer zurück, die Einstellung bleibt', async ({ page }) => {
+  await oeffneTimer(page);
+  await stelleEin(page, 20, 5);
+  await bediene(page.getByRole('button', { name: 'Start' }));
+  await page.clock.runFor(7000);
+  await expect(zeit(page)).toHaveText('00:13');
+
+  await page.reload();
+  await expect(page.getByText('Bereit', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zurücksetzen' })).toBeDisabled();
+  await expect(zeit(page)).toHaveText('00:20');
+  await expect(page.getByRole('textbox', { name: 'Pause in Sekunden' })).toHaveValue('5');
+});
+
+test.describe('localStorage nicht nutzbar (C-09)', () => {
+  const FAELLE = [
+    {
+      titel: 'Zugriff gesperrt (SecurityError)',
+      // Wie bei gesperrten Website-Daten: schon der Zugriff auf window.localStorage wirft.
+      skript: () => {
+        Object.defineProperty(window, 'localStorage', {
+          configurable: true,
+          get() {
+            throw new DOMException('Zugriff verweigert', 'SecurityError');
+          },
+        });
+      },
+    },
+    {
+      titel: 'Schreiben scheitert (QuotaExceededError)',
+      skript: () => {
+        Storage.prototype.setItem = function () {
+          throw new DOMException('Speicher voll', 'QuotaExceededError');
+        };
+      },
+    },
+  ];
+
+  for (const { titel, skript } of FAELLE) {
+    test(`${titel}: Standard, Änderung wirkt, Timer läuft ohne Fehler`, async ({ page }) => {
+      const fehler: string[] = [];
+      page.on('pageerror', (f) => fehler.push(f.message));
+      await page.addInitScript(skript);
+
+      await oeffneTimer(page);
+      await expect(zeit(page)).toHaveText('00:30');
+
+      await stelleEin(page, 6, 2);
+      await expect(zeit(page)).toHaveText('00:06');
+      await bediene(page.getByRole('button', { name: 'Start' }));
+      await page.clock.runFor(7000);
+      await expect(ansage(page)).toHaveText('Pause, Runde 1');
+      await expect(zeit(page)).toHaveText('00:01');
+
+      // Nichts gespeichert: Nach dem Neuladen gilt wieder der Standard.
+      await page.reload();
+      await expect(page.getByRole('textbox', { name: 'Training in Sekunden' })).toHaveValue('30');
+      expect(fehler).toEqual([]);
+    });
+  }
+});

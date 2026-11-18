@@ -103,7 +103,7 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 
 | Playwright-Projekte | Build und Server | Tests |
 | --- | --- | --- |
-| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
+| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/timer.spec.ts` (Timer: Einstellung, Ablauf, Zeitsprung, Pause 0, Grenzen, Speicherung, Tastatur, Smartphone-Groesse, Wake Lock; seit C-09 Einstellung per Tastatur, Neuladen im Lauf, gesperrter oder voller `localStorage`), `e2e/app.spec.ts` (Startseite und Start-Button, Tab fokussiert den ersten Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), aus `e2e/visuell.spec.ts` Roboto selbst gehostet geladen und verwendet (Startseite) und dunkles Schema |
 | `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Textfeld-Label schwebt bei Fokus (gemessene Lage und Groesse, kein Bildvergleich), keine fremden Hosts der Galerie |
 | `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel, Timer auf Smartphone-Groesse (bereit hell/dunkel, laufend hell) |
 
@@ -160,6 +160,20 @@ eslint.config.js      ESLint, nur Import-Regel fuer die Galerie
   Restzeit in Worten (`role="timer"`) und eine Ansage nur beim Phasenwechsel.
 - Nicht geprueft: Verhalten in echtem iOS-Safari bei gesperrtem Bildschirm und ob Wake
   Lock auf echten Geraeten greift (C-01b).
+
+## Funktionstests (C-09)
+
+Alle Tests lokal: `npm test` (Vitest) und `npm run test:e2e` (Playwright, baut beide
+Builds selbst). Laeuft auf Port 4173 oder 4174 schon ein Server, verwendet Playwright
+ausserhalb von CI diesen (`reuseExistingServer`); vor dem Lauf also keinen fremden
+`vite preview` offen lassen.
+
+| Muss-Funktion | Tests |
+| --- | --- |
+| Intervalltimer | `src/timer/*.test.ts(x)` (Logik mit kontrollierter Uhr, Einstellung und Speicherung, Hooks, Ansicht), `src/format/dauer.test.ts` (Formatierer, Grenzwerte E21), `e2e/timer.spec.ts` (alle vier Browser) |
+| Bedienbar auf dem Smartphone | `e2e/timer.spec.ts` (360 px, Zielflaechen), Projekt `mobile` |
+| Offline-Start (PWA) | `e2e/service-worker-cache.spec.ts` |
+| Passkeys, Workouts, Sichtbarkeit | noch keine Tests: Die Funktionen fehlen im Client (C-03 bis C-05) |
 
 ## Offene Entscheidungen
 
