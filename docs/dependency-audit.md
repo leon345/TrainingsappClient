@@ -87,6 +87,78 @@ nur über einen Override:
 - **Entscheidung offen** (Orchestrator). Empfehlung: nicht übernehmen, sondern
   auf eine `workbox-build`-Version mit `glob` ≥ 14.0.2 warten.
 
+## C-16: Test des Service-Worker-Caches und Prüfung des Workbox-Upgrades
+
+Stand: 18.11.2026. Basis: `task/C-02-timer-ui` (88c13f2), Lockfile und
+`package.json` unverändert. Node v22.22.1, npm 9.2.0.
+
+### Teil 1: Test des Service-Worker-Caches (erledigt)
+
+Die Lücke, wegen der der `glob`-Override abgelehnt wurde (E27), ist jetzt mit
+`e2e/service-worker-cache.spec.ts` geschlossen. Die Tests laufen ohne Tag in
+`chromium`, `firefox`, `webkit` und `mobile` gegen den Produktions-Build. Die
+Erwartung wird aus dem Build abgeleitet, nicht aus einer Liste von
+Hash-Dateinamen:
+
+- `dist/sw.js` wird in einer Node-Sandbox (`node:vm`) ausgeführt; die an
+  `precacheAndRoute` übergebene Liste wird abgefangen (unabhängig von der
+  Schreibweise des minifizierten Codes).
+- Die Precache-Liste (ohne Doppelte) ist **gleich** der Menge aller Dateien in
+  `dist/` außer `sw.js` und `workbox-*.js` (fehlende und überzählige Einträge
+  fallen auf).
+- Alle ab `index.html` erreichbaren Dateien (Verweise in HTML, CSS `url()`,
+  Manifest-Icons, `assets/…` in JS) existieren in `dist/` und stehen in der
+  Liste. Gegenprobe, dass dabei HTML, `registerSW.js`, Manifest, JS, CSS,
+  `woff2`, `favicon.svg` und Icons gefunden werden.
+- Jeder Eintrag existiert in `dist/`; Revisionen sind der MD5 des Inhalts,
+  Einträge ohne Revision haben einen Hash im Dateinamen; mehrfach genannte URLs
+  haben dieselbe Revision.
+- Nichts Unerwünschtes: keine Galerie, keine Source Maps (`.map`), nicht das
+  Service-Worker-Skript selbst, keine absoluten oder `..`-Pfade.
+- Browser: Seite laden, warten bis der Service Worker aktiv ist und die Seite
+  kontrolliert; Cache Storage (`workbox-precache*`) enthält genau die Dateien
+  von `dist/` außer dem Service-Worker-Skript; dann
+  `context.setOffline(true)`, Gegenprobe (unbekannte URL schlägt fehl),
+  Reload: Seite kommt aus dem Service Worker, keine Anfrage schlägt fehl,
+  keine Antwort am Service Worker vorbei, Roboto lädt, Timer startet und zählt
+  (00:30 → 00:28 mit `page.clock`). Läuft in allen vier Browsern.
+- **Einschränkung Firefox:** Bei Playwrights Offline-Emulation liefert Firefox
+  weiter aus dem HTTP-/Speicher-Cache (geprüft: mit `serviceWorkers: 'block'`
+  lädt ein Reload offline trotzdem mit 200, Roboto lädt). Der Offline-Teil
+  allein würde dort eine fehlende Datei nicht bemerken; in Firefox fängt sie
+  der Vergleich des Cache Storage im selben Test.
+
+**Nachweis, dass die Tests die befürchtete Störung bemerken** (Änderungen an
+`vite.config.ts` jeweils nur lokal, zurückgenommen, nicht committet):
+
+| Störung | Ergebnis |
+| --- | --- |
+| `globPatterns` ohne `woff2` (9 Schriftdateien fehlen) | 12 von 20 rot: Vollständigkeit und Erreichbarkeit in allen 4 Projekten, Offline-Test in allen 4 (Chromium/WebKit/mobile: Schrift lädt nicht; Firefox: Cache Storage). |
+| `globIgnores` ergänzt um `**/roboto-latin-wght-*` (eine Datei fehlt) | 12 von 20 rot, Meldung nennt genau `assets/roboto-latin-wght-normal-….woff2`. |
+| `additionalManifestEntries` mit `gibt-es-nicht.js` und `galerie.html` | Chromium: 4 von 5 rot (Vollständigkeit, Existenz, Unerwünschtes, Offline-Test). |
+
+Ohne Störung: 20 von 20 grün, auch mit `--repeat-each=3`.
+
+### Teil 2: Upgrade (offen, Voraussetzung nicht erfüllt)
+
+Geprüft am 18.11.2026 in der npm-Registry:
+
+| Paket | `latest` | Neueste Veröffentlichung | `glob` |
+| --- | --- | --- | --- |
+| `workbox-build` | 7.4.1 (Tag `next`: 6.4.0) | 7.4.1, 04.05.2026 | `^11.0.1` |
+| `vite-plugin-pwa` | 2.0.0 | 2.0.0, 03.10.2026 | über `workbox-build ^7.4.1` |
+| `glob` | 14.0.6 | | |
+| `minimatch` | 11.0.9 | | |
+| `picomatch` | 4.0.7 (weiter kein Fix für #1) | | |
+
+Es gibt keine Version von `workbox-build` oder `vite-plugin-pwa`, die `glob`
+≥ 14.0.2 nutzt. Deshalb **kein Upgrade, kein Override, kein
+`npm audit fix --force`**; `package.json` und Lockfile unverändert. Stand
+`npm audit` unverändert: 14 (12 hoch, 2 moderat), `--omit=dev`: 0. Die
+Meldungen #13 und #14 bleiben Restrisiko nach E27 (Begründung oben). Sobald
+eine passende Version erscheint, kann das Upgrade mit dem neuen Test
+abgesichert werden.
+
 ## Erneut prüfen
 
 - Sobald `picomatch` > 4.0.7 oder `workbox-build` > 7.4.1 erscheint.
