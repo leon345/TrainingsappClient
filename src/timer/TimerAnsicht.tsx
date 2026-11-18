@@ -14,13 +14,17 @@ import './TimerAnsicht.css';
 
 const PHASE_NAME: Record<Phase, string> = { training: 'Training', pause: 'Pause' };
 
-/** Dauer sichtbar als `mm:ss`, für Screenreader in Worten (E21). */
-function DauerText({ sekunden }: { sekunden: number }): ReactNode {
+/**
+ * Dauer sichtbar als `mm:ss`, für Screenreader in Worten (E21). Satzzeichen
+ * danach gehören in beide Fassungen, sonst trennen manche Browser sie beim
+ * Vorlesen mit einem Leerzeichen ab.
+ */
+function DauerText({ sekunden, danach = '' }: { sekunden: number; danach?: string }): ReactNode {
   const dauer = formatiereDauer(sekunden);
   return (
     <>
-      <span aria-hidden="true">{dauer.text}</span>
-      <span className="nur-screenreader">{dauer.ariaLabel}</span>
+      <span aria-hidden="true">{dauer.text + danach}</span>
+      <span className="nur-screenreader">{dauer.ariaLabel + danach}</span>
     </>
   );
 }
@@ -57,7 +61,7 @@ export function TimerAnsicht({ uhr }: TimerAnsichtProps) {
   const zeitLang = stand.restSekunden >= 3600;
   const ansage = laeuft ? `${PHASE_NAME[stand.phase]}, Runde ${stand.runde}` : bereit ? '' : 'Angehalten';
 
-  const sperrHinweis = bereit ? null : <> Zum Ändern zurücksetzen.</>;
+  const sperrHinweis = bereit ? null : ' Zum Ändern zurücksetzen.';
 
   return (
     <section className="timer" aria-labelledby="timer-titel" data-phase={stand.phase} data-status={zustand.status}>
@@ -132,7 +136,8 @@ export function TimerAnsicht({ uhr }: TimerAnsichtProps) {
             description={
               <>
                 {GRENZEN.trainingSekunden.min} bis {GRENZEN.trainingSekunden.max}, entspricht{' '}
-                <DauerText sekunden={einstellung.trainingSekunden} />.{sperrHinweis}
+                <DauerText sekunden={einstellung.trainingSekunden} danach="." />
+                {sperrHinweis}
               </>
             }
           />
@@ -146,7 +151,8 @@ export function TimerAnsicht({ uhr }: TimerAnsichtProps) {
             description={
               <>
                 {GRENZEN.pauseSekunden.min} bis {GRENZEN.pauseSekunden.max}, 0 = keine Pause, entspricht{' '}
-                <DauerText sekunden={einstellung.pauseSekunden} />.{sperrHinweis}
+                <DauerText sekunden={einstellung.pauseSekunden} danach="." />
+                {sperrHinweis}
               </>
             }
           />

@@ -1,20 +1,22 @@
 import { expect, test } from '@playwright/test';
 
 test('Startseite zeigt Titel und bedienbaren Button', async ({ page }) => {
+  // Seit C-02 ist die Startseite der Timer; der Start-Button ersetzt den
+  // früheren Beispiel-Button.
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Trainingsapp' })).toBeVisible();
 
-  const button = page.getByRole('button', { name: 'Antippen' });
+  const button = page.getByRole('button', { name: 'Start' });
   await button.click();
-  await expect(page.getByRole('status')).toHaveText('1-mal angetippt');
+  await expect(page.getByRole('status')).toHaveText('Training, Runde 1');
 });
 
 test('Tab setzt den Tastaturfokus auf den ersten Button', async ({ page }) => {
   // Funktions- und Barrierefreiheitsprüfung ohne Bildvergleich, alle Browser.
   // Der Fokusring selbst wird nur in Chromium per Bildvergleich geprüft.
   await page.goto('/');
-  const button = page.getByRole('button', { name: 'Antippen' });
+  const button = page.getByRole('button', { name: 'Start' });
   await expect(button).toBeVisible();
 
   await page.keyboard.press('Tab');
