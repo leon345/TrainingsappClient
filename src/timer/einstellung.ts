@@ -40,10 +40,10 @@ export function istGueltigeEinstellung(wert: unknown): wert is TimerEinstellung 
   );
 }
 
-type Speicher = Pick<Storage, 'getItem' | 'setItem'>;
+export type Speicher = Pick<Storage, 'getItem' | 'setItem'>;
 
 /** Liest den Speicher; im privaten Modus mancher Browser wirft schon der Zugriff. */
-function standardSpeicher(): Speicher | null {
+export function standardSpeicher(): Speicher | null {
   try {
     return globalThis.localStorage ?? null;
   } catch {
