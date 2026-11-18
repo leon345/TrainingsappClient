@@ -1,0 +1,97 @@
+/*
+ * Konto (C-03), mobil zuerst: Karten untereinander, ab 840 px nebeneinander.
+ */
+.konto {
+  display: grid;
+  gap: 1rem;
+}
+
+.konto__titel {
+  margin: 0;
+}
+
+/* Programmatischer Fokus nach dem Wechsel der Ansicht: kein Fokusring auf der Überschrift. */
+.konto__titel:focus {
+  outline: none;
+}
+
+.konto__status {
+  margin: 0;
+  min-height: 1.25rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.konto__status:empty {
+  min-height: 0;
+}
+
+.konto__fehler {
+  border-color: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-surface);
+}
+
+.konto__fehler p,
+.konto__hinweis p {
+  margin: 0;
+}
+
+.konto__karten {
+  display: grid;
+  gap: 1rem;
+}
+
+.konto__karten h3 {
+  margin: 0 0 0.75rem;
+}
+
+.konto__formular {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.konto__formular > div {
+  width: 100%;
+}
+
+.konto__empfehlung {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.konto__liste {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.konto__eintrag {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.konto__bezeichnung,
+.konto__daten {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.konto__daten {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.konto__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (min-width: 840px) {
+  .konto__karten {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
