@@ -1,20 +1,16 @@
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test';
 
 /**
- * Zwei Builds, zwei Server (Entscheidung E24):
+ * Zwei Builds, zwei Server (Entscheidung E24), dazu visuelle Tests nur in
+ * Chromium (Nutzervorgabe: ein Browser reicht für Bildvergleiche).
  *
- * - Produktions-Build (`npm run build`, `vite preview`, Port 4173):
- *   Projekte `chromium`, `firefox`, `webkit`, `mobile`. Hier laufen alle
- *   funktionalen E2E-Tests (Manifest, Service Worker, keine fremden Hosts),
- *   die Prüfung, dass der Build keine Galerie enthält, und die Tests aus
- *   e2e/visuell.spec.ts ohne Tag `@galerie` (Startseite, Farbschema).
- * - Test-Build (`npm run build:test`, `vite build --mode test` nach dist-test/,
- *   Port 4174): Projekte `galerie-chromium`, `galerie-firefox`,
- *   `galerie-webkit`, `galerie-mobile`. Hier laufen nur die Tests der
- *   Komponentengalerie (Tag `@galerie` in e2e/visuell.spec.ts).
+ * | Projekte                                   | Build, Server                    | Tests                          |
+ * | `chromium`, `firefox`, `webkit`, `mobile`  | Produktion, `vite preview` 4173  | funktional, ohne `@galerie`/`@visuell` |
+ * | `galerie-chromium`, `-firefox`, `-webkit`, `-mobile` | Test (`--mode test`), 4174 | funktional mit `@galerie` (nicht `@visuell`) |
+ * | `visuell-chromium`                         | Test (`--mode test`), 4174       | nur `@visuell` (Bildvergleiche) |
  *
- * Die Galerie-Projekte legen ihre Referenzbilder unter demselben Namen ab wie
- * das gleichnamige Browser-Projekt (z. B. `buttons-light-chromium-linux.png`).
+ * Das Aussehen wird außerhalb von Chromium nicht automatisch geprüft.
+ * Tags stehen in e2e/visuell.spec.ts.
  */
 
 const PORT_PRODUKTION = 4173;
@@ -23,6 +19,8 @@ const URL_PRODUKTION = `http://localhost:${PORT_PRODUKTION}`;
 const URL_TEST = `http://localhost:${PORT_TEST}`;
 
 const GALERIE = /@galerie/;
+const VISUELL = /@visuell/;
+const GALERIE_ODER_VISUELL = /@galerie|@visuell/;
 
 const BROWSER = [
   { name: 'chromium', geraet: devices['Desktop Chrome'] },
@@ -33,20 +31,28 @@ const BROWSER = [
 ] as const;
 
 const projekte: NonNullable<PlaywrightTestConfig['projects']> = [
-  // Gegen den Produktions-Build: alles außer den Galerie-Tests.
+  // Produktions-Build: alle funktionalen Tests, die keine Galerie brauchen.
   ...BROWSER.map(({ name, geraet }) => ({
     name,
-    grepInvert: GALERIE,
+    grepInvert: GALERIE_ODER_VISUELL,
     use: { ...geraet, baseURL: URL_PRODUKTION },
   })),
-  // Gegen den Test-Build: nur die Galerie-Tests.
+  // Test-Build: funktionale Tests, die die Galerie brauchen.
   ...BROWSER.map(({ name, geraet }) => ({
     name: `galerie-${name}`,
-    testMatch: 'visuell.spec.ts',
     grep: GALERIE,
+    grepInvert: VISUELL,
     use: { ...geraet, baseURL: URL_TEST },
-    snapshotPathTemplate: `{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}-${name}{-snapshotSuffix}{ext}`,
   })),
+  // Test-Build: Bildvergleiche nur in Chromium. Die Referenzbilder behalten
+  // ihre bisherigen Namen (z. B. `buttons-light-chromium-linux.png`).
+  {
+    name: 'visuell-chromium',
+    grep: VISUELL,
+    use: { ...devices['Desktop Chrome'], baseURL: URL_TEST },
+    snapshotPathTemplate:
+      '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}-chromium{-snapshotSuffix}{ext}',
+  },
 ];
 
 export default defineConfig({

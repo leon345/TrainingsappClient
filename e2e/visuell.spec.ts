@@ -2,16 +2,19 @@ import { expect, test, type Page } from '@playwright/test';
 
 /*
  * Visuelle Tests der Kernkomponenten (C-06). Grundlage ist die
- * Komponentengalerie (galerie.html). Referenzbilder liegen unter
- * e2e/visuell.spec.ts-snapshots/, je Browser und Betriebssystem.
+ * Komponentengalerie (galerie.html).
  *
- * Tests mit Tag `@galerie` brauchen galerie.html und laufen deshalb nur gegen
- * den Test-Build (Projekte `galerie-*`, E24). Die übrigen Tests (Startseite,
- * Farbschema) laufen gegen den Produktions-Build.
+ * Tags (Zuordnung zu den Projekten in playwright.config.ts):
+ * - `@visuell`: Bildvergleich gegen Referenzbilder. Läuft nur in Chromium
+ *   (Projekt `visuell-chromium`) gegen den Test-Build. Referenzbilder liegen
+ *   unter e2e/visuell.spec.ts-snapshots/, nur für Chromium unter Linux.
+ * - `@galerie`: braucht galerie.html, die es nur im Test-Build gibt (E24).
+ *   Funktionale Galerie-Tests (`@galerie` ohne `@visuell`) laufen in allen
+ *   Browsern gegen den Test-Build (Projekte `galerie-*`).
+ * - ohne Tag: funktional, alle Browser gegen den Produktions-Build.
  *
  * Neu erzeugen nach gewollten Änderungen:
- *   npx playwright test e2e/visuell.spec.ts --project=chromium --project=firefox \
- *     --project=galerie-chromium --project=galerie-firefox --update-snapshots
+ *   npx playwright test --project=visuell-chromium --update-snapshots
  */
 
 const ABSCHNITTE = [
@@ -43,7 +46,7 @@ async function oeffneGalerie(page: Page, farbschema: 'light' | 'dark') {
 for (const farbschema of ['light', 'dark'] as const) {
   test.describe(
     `Komponentengalerie (${farbschema === 'light' ? 'hell' : 'dunkel'})`,
-    { tag: '@galerie' },
+    { tag: ['@galerie', '@visuell'] },
     () => {
       for (const abschnitt of ABSCHNITTE) {
         test(`${abschnitt}`, async ({ page }) => {
@@ -55,7 +58,7 @@ for (const farbschema of ['light', 'dark'] as const) {
   );
 }
 
-test('Button: Fokusring bei Tastaturbedienung', { tag: '@galerie' }, async ({ page }) => {
+test('Button: Fokusring bei Tastaturbedienung', { tag: ['@galerie', '@visuell'] }, async ({ page }) => {
   await oeffneGalerie(page, 'light');
   const button = page.getByRole('button', { name: 'Filled' });
   await page.keyboard.press('Tab');
@@ -63,7 +66,7 @@ test('Button: Fokusring bei Tastaturbedienung', { tag: '@galerie' }, async ({ pa
   await expect(page.getByTestId('buttons')).toHaveScreenshot('buttons-fokus-light.png');
 });
 
-test('Textfeld: schwebendes Label im Fokus', { tag: '@galerie' }, async ({ page }) => {
+test('Textfeld: schwebendes Label im Fokus', { tag: ['@galerie', '@visuell'] }, async ({ page }) => {
   await oeffneGalerie(page, 'light');
   await page.getByRole('textbox', { name: 'Titel' }).focus();
   await expect(page.getByTestId('textfelder')).toHaveScreenshot('textfelder-fokus-light.png', {
@@ -72,7 +75,7 @@ test('Textfeld: schwebendes Label im Fokus', { tag: '@galerie' }, async ({ page 
   });
 });
 
-test('Startseite (hell und dunkel)', async ({ page }) => {
+test('Startseite (hell und dunkel)', { tag: '@visuell' }, async ({ page }) => {
   for (const farbschema of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: farbschema });
     await page.goto('/');

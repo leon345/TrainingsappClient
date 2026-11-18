@@ -34,7 +34,7 @@ Status: Grundgeruest steht (Build, PWA, Tests). Fachfunktionen folgen.
 | Bedienelemente | React Aria Components (Barrierefreiheit), Aussehen nach Material 3 Expressive aus eigenem Token-Paket |
 | Farbschemata | `@material/material-color-utilities` (Generator `src/theme/farbschema.ts`) |
 | Unit-Tests | Vitest mit jsdom und Testing Library |
-| E2E-Tests | Playwright: Chromium, Firefox, WebKit und Mobil-Emulation (iPhone, WebKit) |
+| E2E-Tests | Playwright: funktional in Chromium, Firefox, WebKit und Mobil-Emulation (iPhone, WebKit); Bildvergleiche nur in Chromium |
 | Lint | ESLint mit nur einer Regel (Importe der Galerie, E24), Parser `@babel/eslint-parser` |
 | Paketmanager | npm (`package-lock.json` gehoert ins Repo) |
 
@@ -81,9 +81,10 @@ erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter 
 | `npm test` | Unit-Tests (Vitest), einmaliger Lauf |
 | `npm run test:watch` | Unit-Tests im Watch-Modus |
 | `npm run test:e2e:install` | Playwright-Browser samt Systemabhaengigkeiten installieren |
-| `npm run test:e2e` | E2E-Tests in allen acht Projekten (baut beide Builds und startet je ein `vite preview`, siehe unten) |
-| `npx playwright test --project=chromium --project=galerie-chromium` | E2E-Tests nur fuer einen Browser (`chromium`, `firefox`, `webkit`, `mobile`, jeweils mit `galerie-`-Projekt) |
-| `npx playwright test e2e/visuell.spec.ts --update-snapshots` | Referenzbilder der visuellen Tests neu erzeugen (nur nach gewollten Design-Änderungen) |
+| `npm run test:e2e` | E2E-Tests in allen neun Projekten (baut beide Builds und startet je ein `vite preview`, siehe unten) |
+| `npx playwright test --project=firefox --project=galerie-firefox` | Funktionale E2E-Tests nur fuer einen Browser (`chromium`, `firefox`, `webkit`, `mobile`, jeweils mit `galerie-`-Projekt) |
+| `npx playwright test --project=visuell-chromium` | Nur die visuellen Tests (Bildvergleiche, Chromium) |
+| `npx playwright test --project=visuell-chromium --update-snapshots` | Referenzbilder neu erzeugen (nur nach gewollten Design-Änderungen) |
 | `npx vitest run src/theme -u` | `src/theme/tokens/farbe.css` nach Änderung am Farbgenerator neu schreiben |
 
 Der Service Worker ist nur im Produktions-Build aktiv (`npm run build` und
@@ -101,14 +102,18 @@ Welcher Test gegen welchen Build laeuft, legt `playwright.config.ts` fest:
 
 | Playwright-Projekte | Build und Server | Tests |
 | --- | --- | --- |
-| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | alle Tests ohne Tag `@galerie`: funktionale Tests (`e2e/app.spec.ts`, u. a. Manifest, Service Worker, keine fremden Hosts), Pruefung "Produktions-Build ohne Galerie" (`e2e/produktions-build.spec.ts`: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), Startseite hell/dunkel und Farbschema aus `e2e/visuell.spec.ts` |
-| `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | nur Tests mit Tag `@galerie` aus `e2e/visuell.spec.ts` (Galerie-Referenzbilder, Fokuszustaende, Schrift, keine fremden Hosts der Galerie) |
+| `chromium`, `firefox`, `webkit`, `mobile` | Produktions-Build, `vite preview` auf Port 4173 | funktionale Tests ohne Tag: `e2e/app.spec.ts` (Startseite und Button, Layout ohne horizontales Scrollen, PWA-Manifest, Service Worker ausgeliefert und registriert, keine fremden Hosts), `e2e/produktions-build.spec.ts` (Produktions-Build ohne Galerie: Dateien in `dist/`, Precache-Liste in `dist/sw.js`, Inhalt, `/galerie.html`), dunkles Schema aus `e2e/visuell.spec.ts` |
+| `galerie-chromium`, `galerie-firefox`, `galerie-webkit`, `galerie-mobile` | Test-Build, `vite preview` auf Port 4174 | funktionale Tests, die die Galerie brauchen (Tag `@galerie` ohne `@visuell`): Roboto selbst gehostet, keine fremden Hosts der Galerie |
+| `visuell-chromium` | Test-Build, `vite preview` auf Port 4174 | nur Bildvergleiche (Tag `@visuell`): Galerie-Abschnitte hell und dunkel, Fokusring, schwebendes Textfeld-Label, Startseite hell und dunkel |
 
-Die `galerie-`-Projekte nutzen dieselben Referenzbilder wie das gleichnamige
-Browser-Projekt (`…-chromium-linux.png`). Damit die Galerie nur zeigt, was
-ausgeliefert wird, erlaubt eine ESLint-Regel (`no-restricted-imports`,
-`eslint.config.js`) in `src/galerie/` nur Importe aus `src/components/` (ohne
-Testdateien), `src/styles.ts`, React und der Galerie selbst.
+Die visuellen Tests laufen nur in Chromium (Vorgabe des Nutzers). Das Aussehen in
+Firefox, WebKit und der Mobil-Emulation wird **nicht** automatisch geprueft; dort
+laufen nur die funktionalen Tests. Referenzbilder gibt es nur fuer Chromium unter
+Linux (`e2e/visuell.spec.ts-snapshots/*-chromium-linux.png`).
+
+Damit die Galerie nur zeigt, was ausgeliefert wird, erlaubt eine ESLint-Regel
+(`no-restricted-imports`, `eslint.config.js`) in `src/galerie/` nur Importe aus
+`src/components/` (ohne Testdateien), `src/styles.ts`, React und der Galerie selbst.
 
 ## Projektstruktur
 

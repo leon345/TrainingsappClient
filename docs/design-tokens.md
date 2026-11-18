@@ -138,15 +138,13 @@ deshalb nicht verwendet.
   Kontraste), `src/components/ui/ui.test.tsx` (Bedienung, ARIA).
 - Playwright: `e2e/visuell.spec.ts` macht Screenshots der Galerie
   (`galerie.html`) je Abschnitt in hell und dunkel, dazu Fokuszustände und
-  Startseite. Die Galerie gibt es nur im Test-Build (`vite build --mode test`,
-  E24); ihre Tests tragen das Tag `@galerie` und laufen in den Projekten
-  `galerie-*` gegen den Test-Build, Startseite und Farbschema gegen den
-  Produktions-Build (Aufteilung siehe README, Abschnitt "Produktions-Build und
-  Test-Build"). Referenzbilder liegen unter `e2e/visuell.spec.ts-snapshots/`, nur
-  für Chromium und Firefox unter Linux. Für WebKit und die Mobil-Emulation gibt
-  es noch keine Referenzbilder, weil die Browser in der Entwicklungsumgebung
-  nicht starten. Nach Einrichtung neu erzeugen:
-  `npx playwright test e2e/visuell.spec.ts --project=webkit --project=mobile --project=galerie-webkit --project=galerie-mobile --update-snapshots`.
+  Startseite. Diese Bildvergleiche (Tag `@visuell`) laufen nur in Chromium
+  (Projekt `visuell-chromium`) gegen den Test-Build (`vite build --mode test`,
+  E24). Firefox, WebKit und Mobil-Emulation prüfen nur die Funktion, nicht das
+  Aussehen (Aufteilung siehe README, Abschnitt "Produktions-Build und
+  Test-Build"). Referenzbilder liegen unter `e2e/visuell.spec.ts-snapshots/`,
+  nur für Chromium unter Linux. Neu erzeugen nach gewollten Änderungen:
+  `npx playwright test --project=visuell-chromium --update-snapshots`.
 - Die Bilder hängen von Betriebssystem und Schriftdarstellung ab. Auf anderen
   Rechnern oder in einer CI müssen sie dort erzeugt werden.
 
