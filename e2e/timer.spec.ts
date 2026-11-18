@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { halteUhrAn } from './uhr';
 
 /*
  * Funktionale Tests des Intervalltimers (C-02). Ohne Tag: laufen in allen vier
@@ -6,7 +7,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  *
  * Die Zeit steuert Playwright (page.clock): `runFor` lässt die Zeit mit allen
  * Takten vergehen, `fastForward` springt vor und löst fällige Takte nur
- * einmal aus, wie ein gedrosselter Tab im Hintergrund.
+ * einmal aus, wie ein gedrosselter Tab im Hintergrund. Nach dem Laden steht
+ * die Uhr (`halteUhrAn`, e2e/uhr.ts); sonst liefe sie mit der echten Zeit
+ * weiter und exakte Anzeigen wackelten unter Last.
  */
 
 const START = new Date('2026-11-18T10:00:00Z');
@@ -15,6 +18,7 @@ async function oeffneTimer(page: Page) {
   await page.clock.install({ time: START });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 2, name: 'Intervalltimer' })).toBeVisible();
+  await halteUhrAn(page, START);
 }
 
 /** Antippen auf Touch-Geräten, sonst Klick. */

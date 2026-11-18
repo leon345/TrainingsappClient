@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { halteUhrAn } from './uhr';
 
 /*
  * Visuelle Tests der Kernkomponenten (C-06). Grundlage ist die
@@ -103,9 +104,12 @@ test.describe('Timer auf Smartphone-Größe (C-02)', { tag: '@visuell' }, () => 
   }
 
   test('läuft, Pause in Runde 1 (hell)', async ({ page }) => {
-    await page.clock.install({ time: new Date('2026-11-18T10:00:00Z') });
+    const uhrStart = new Date('2026-11-18T10:00:00Z');
+    await page.clock.install({ time: uhrStart });
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
     await page.goto('/');
+    // Uhr anhalten, damit bis zum Bild nur die 33 s aus runFor vergehen (e2e/uhr.ts).
+    await halteUhrAn(page, uhrStart);
     await page.getByRole('button', { name: 'Start' }).click();
     await page.clock.runFor(33_000);
     await expect(page.getByRole('timer')).toHaveText('00:07');

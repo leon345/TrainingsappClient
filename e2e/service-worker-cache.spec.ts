@@ -4,6 +4,7 @@ import { join, posix, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { expect, test, type Page } from '@playwright/test';
+import { halteUhrAn } from './uhr';
 
 /*
  * Service-Worker-Cache des Produktions-Builds (C-16, Entscheidung E27).
@@ -200,7 +201,8 @@ test('App startet offline aus dem Service-Worker-Cache, Timer bedienbar', async 
   page,
   context,
 }) => {
-  await page.clock.install({ time: new Date('2026-11-18T10:00:00Z') });
+  const uhrStart = new Date('2026-11-18T10:00:00Z');
+  await page.clock.install({ time: uhrStart });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Trainingsapp' })).toBeVisible();
   // Aktiv heißt: Die Installation, in der Workbox den Precache füllt, ist abgeschlossen.
@@ -267,6 +269,8 @@ test('App startet offline aus dem Service-Worker-Cache, Timer bedienbar', async 
   });
   expect(schrift, 'Roboto offline geladen').toEqual(['loaded']);
 
+  // Uhr anhalten, damit bis zur Prüfung nur die 2 s aus runFor vergehen (e2e/uhr.ts).
+  await halteUhrAn(page, uhrStart);
   const start = page.getByRole('button', { name: 'Start' });
   const touch = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
   if (touch) await start.tap();
