@@ -31,7 +31,8 @@ Status: Grundgeruest steht (Build, PWA, Tests). Fachfunktionen folgen.
 | UI | React 19, TypeScript |
 | Build und Dev-Server | Vite |
 | PWA | `vite-plugin-pwa` (Web-App-Manifest, Service Worker per Workbox, automatische Aktualisierung) |
-| Bedienelemente | React Aria Components (Barrierefreiheit, kein eigenes Aussehen) |
+| Bedienelemente | React Aria Components (Barrierefreiheit), Aussehen nach Material 3 Expressive aus eigenem Token-Paket |
+| Farbschemata | `@material/material-color-utilities` (Generator `src/theme/farbschema.ts`) |
 | Unit-Tests | Vitest mit jsdom und Testing Library |
 | E2E-Tests | Playwright: Chromium, Firefox, WebKit und Mobil-Emulation (iPhone, WebKit) |
 | Paketmanager | npm (`package-lock.json` gehoert ins Repo) |
@@ -44,8 +45,12 @@ erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter 
 - Keine fremden CDNs. Schriften und Icons werden selbst gehostet, also als npm-Paket
   mitgebaut oder als Datei unter `public/` abgelegt. Ein E2E-Test prueft, dass die
   Startseite keine fremden Hosts anfragt.
-- Kein `@material/web`. Design-Tokens nach Material 3 Expressive kommen als eigene
-  CSS-Variablen (C-06). Bis dahin nutzt die App Systemschriften.
+- Kein `@material/web`. Design-Tokens nach Material 3 Expressive liegen als eigene
+  CSS-Variablen unter `src/theme/`, Grundkomponenten auf React Aria unter
+  `src/components/ui/`. Herkunft der Werte und Komponentenumfang:
+  [docs/design-tokens.md](docs/design-tokens.md).
+- Schrift Roboto (`@fontsource-variable/roboto`, OFL 1.1) und Icons Material Symbols
+  (`@material-symbols/svg-400`, Apache 2.0) werden mitgebaut.
 - Dauern werden projektweit in ganzen Sekunden als Integer gefuehrt (`dauerSekunden`,
   `pauseSekunden`), kein ISO-8601.
 
@@ -74,6 +79,8 @@ erweitert sich ab 840 px Breite. Eine native Huelle per Capacitor folgt spaeter 
 | `npm run test:e2e:install` | Playwright-Browser samt Systemabhaengigkeiten installieren |
 | `npm run test:e2e` | E2E-Tests in allen vier Projekten (baut vorher und startet `vite preview`) |
 | `npx playwright test --project=chromium` | E2E-Tests nur in einem Projekt (`chromium`, `firefox`, `webkit`, `mobile`) |
+| `npx playwright test e2e/visuell.spec.ts --update-snapshots` | Referenzbilder der visuellen Tests neu erzeugen (nur nach gewollten Design-Änderungen) |
+| `npx vitest run src/theme -u` | `src/theme/tokens/farbe.css` nach Änderung am Farbgenerator neu schreiben |
 
 Der Service Worker ist nur im Produktions-Build aktiv (`npm run build` und
 `npm run preview`), nicht im Dev-Server.
@@ -82,10 +89,16 @@ Der Service Worker ist nur im Produktions-Build aktiv (`npm run build` und
 
 ```
 index.html            Einstiegsseite
+galerie.html          Komponentengalerie (Grundlage der visuellen Tests)
 public/               Statische Dateien (Favicon, PWA-Icons)
 src/main.tsx          Einstieg, rendert <App />
+src/styles.ts         Globale Stile (Schrift, Token-Paket, Rahmen)
 src/App.tsx           Anwendungsrahmen
-src/components/       Komponenten (derzeit eine React-Aria-Beispielkomponente)
+src/theme/            Token-Paket Material 3 Expressive (CSS-Variablen)
+src/components/ui/    Grundkomponenten (Button, IconButton, Icon, Card, TextField)
+src/components/       Weitere Komponenten (BeispielButton)
+src/galerie/          Komponentengalerie
+docs/                 Design-Tokens und Komponentenumfang
 src/test/setup.ts     Vitest-Setup (jest-dom-Matcher)
 e2e/                  Playwright-Tests
 vite.config.ts        Vite-, PWA- und Vitest-Konfiguration
@@ -94,8 +107,5 @@ playwright.config.ts  Playwright-Projekte und Webserver
 
 ## Offene Entscheidungen
 
-- Umsetzung von Material 3 Expressive: Entschieden ist ein eigenes Token-Paket mit
-  CSS-Variablen auf Basis von React Aria (ohne `@material/web`). Die Ausgestaltung
-  folgt in C-06.
 - Pruefung auf iOS-Geraet (Spike C-01b): Timer bei gesperrtem Bildschirm, Passkeys im
   Capacitor-WebView.
