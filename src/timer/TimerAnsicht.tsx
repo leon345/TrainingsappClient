@@ -106,7 +106,8 @@ export function TimerAnsicht({ uhr }: TimerAnsichtProps) {
 
   return (
     <section className="timer" aria-labelledby="timer-titel" data-phase={stand.phase} data-status={zustand.status}>
-      <h2 id="timer-titel" className="timer__titel md-typescale-headline-small">
+      {/* tabIndex -1: Ziel des Fokus nach dem Wechsel der Ansicht (App), nicht in der Tab-Reihenfolge. */}
+      <h2 id="timer-titel" tabIndex={-1} className="timer__titel md-typescale-headline-small">
         Intervalltimer
       </h2>
 

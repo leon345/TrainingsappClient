@@ -30,6 +30,20 @@
   padding: 1rem;
 }
 
+/*
+ * Navigation zwischen Timer und Konto (C-03): unten wie die
+ * M3-Navigationsleiste, bleibt beim Scrollen sichtbar.
+ */
+.app__navigation {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--md-sys-color-surface-container);
+}
+
 /* Nur für Screenreader: unsichtbar, aber im Barrierefreiheitsbaum. */
 .nur-screenreader {
   position: absolute;
