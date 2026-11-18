@@ -284,3 +284,113 @@ test('App startet offline aus dem Service-Worker-Cache, Timer bedienbar', async 
   expect(fehlgeschlagen, 'offline fehlgeschlagene Anfragen').toEqual([]);
   expect(ausDemNetz, 'Antworten nicht aus dem Service Worker').toEqual([]);
 });
+
+/*
+ * API unter /v1 (C-03): Der Service Worker darf Aufrufe an /v1 weder aus dem
+ * Cache beantworten noch Navigationen dorthin auf die Startseite umleiten.
+ */
+
+type SwAufrufe = { routen: unknown[]; navigationsOptionen: { denylist?: RegExp[]; allowlist?: RegExp[] }[] };
+
+/** Führt dist/sw.js in einer Sandbox aus und schreibt registerRoute und NavigationRoute mit. */
+function swRouten(): SwAufrufe {
+  const aufrufe: SwAufrufe = { routen: [], navigationsOptionen: [] };
+  const nichts = () => undefined;
+  const workbox = new Proxy(
+    {},
+    {
+      get: (_ziel, name) => {
+        if (name === 'registerRoute') return (route: unknown) => aufrufe.routen.push(route);
+        if (name === 'NavigationRoute') {
+          return function (_handler: unknown, optionen: SwAufrufe['navigationsOptionen'][number] = {}) {
+            aufrufe.navigationsOptionen.push(optionen);
+            return { navigationRoute: true };
+          };
+        }
+        return function () {
+          return {};
+        };
+      },
+    },
+  );
+  const sandbox: Record<string, unknown> = {
+    skipWaiting: nichts,
+    addEventListener: nichts,
+    define: (_abhaengigkeiten: string[], fabrik: (wb: unknown) => void) => fabrik(workbox),
+  };
+  sandbox.self = sandbox;
+  runInNewContext(readFileSync(join(DIST, 'sw.js'), 'utf8'), sandbox);
+  return aufrufe;
+}
+
+test.describe('Service Worker und /v1 (dist/sw.js)', () => {
+  test('einzige eigene Route ist die Navigation, /v1 ist davon ausgenommen', () => {
+    const { routen, navigationsOptionen } = swRouten();
+    // Kein Runtime-Caching: ausser dem Precache (precacheAndRoute) nur die Navigationsroute.
+    expect(routen).toEqual([{ navigationRoute: true }]);
+    expect(navigationsOptionen).toHaveLength(1);
+    const { denylist = [], allowlist } = navigationsOptionen[0]!;
+    const ausgenommen = (pfad: string) => denylist.some((muster) => muster.test(pfad));
+
+    for (const pfad of ['/v1', '/v1/', '/v1/passkeys', '/v1/registrieren/optionen', '/v1/unbekannt']) {
+      expect(ausgenommen(pfad), pfad).toBe(true);
+    }
+    for (const pfad of ['/', '/index.html', '/konto', '/v10', '/v2/x']) {
+      expect(ausgenommen(pfad), pfad).toBe(false);
+    }
+    expect(allowlist).toBeUndefined();
+  });
+
+  test('Precache enthält nichts unter /v1', () => {
+    expect(precacheListe().filter((e) => /^\/?v1(\/|$)/.test(e.url))).toEqual([]);
+  });
+
+  test('Anfragen und Navigationen nach /v1 gehen am Service Worker vorbei, offline schlagen sie fehl', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/');
+    await warteAufServiceWorker(page);
+
+    const antworten: { url: string; ausServiceWorker: boolean }[] = [];
+    page.on('response', (r) => {
+      if (new URL(r.url()).pathname.startsWith('/v1')) {
+        antworten.push({ url: new URL(r.url()).pathname, ausServiceWorker: r.fromServiceWorker() });
+      }
+    });
+
+    // Online: fetch geht ans Netz (der Preview-Server antwortet mit irgendetwas).
+    const online = await page.evaluate(async () => (await fetch('/v1/passkeys', { cache: 'no-store' })).status);
+    expect(online).toBeGreaterThan(0);
+    // Online: Navigation geht ans Netz, nicht an die Startseite aus dem Cache.
+    const navigation = await page.goto('/v1/navigation-online');
+    expect(navigation?.fromServiceWorker()).toBe(false);
+    expect(antworten).toEqual([
+      { url: '/v1/passkeys', ausServiceWorker: false },
+      { url: '/v1/navigation-online', ausServiceWorker: false },
+    ]);
+
+    await page.goto('/');
+    await warteAufServiceWorker(page);
+    await context.setOffline(true);
+
+    // Offline: kein Ersatz aus dem Cache, weder für fetch noch für die Navigation.
+    const offline = await page.evaluate(async () => {
+      try {
+        await fetch(`/v1/passkeys?offline=${Date.now()}`, { cache: 'no-store' });
+        return 'erreichbar';
+      } catch {
+        return 'fehlgeschlagen';
+      }
+    });
+    expect(offline).toBe('fehlgeschlagen');
+    // Gegenprobe: Die Startseite kommt offline weiter aus dem Service Worker.
+    const start = await page.reload();
+    expect(start?.fromServiceWorker()).toBe(true);
+    const offlineNavigation = await page.goto(`/v1/navigation-offline-${Date.now()}`).then(
+      (r) => (r?.fromServiceWorker() ? 'service-worker' : 'netz'),
+      () => 'fehlgeschlagen',
+    );
+    expect(offlineNavigation).toBe('fehlgeschlagen');
+  });
+});

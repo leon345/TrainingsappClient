@@ -72,6 +72,11 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         navigateFallback: '/index.html',
+        // API (C-03): Navigationen nach /v1 bekommen nie die Startseite aus dem
+        // Cache. Für /v1 gibt es weder Precache-Eintrag noch Runtime-Caching,
+        // Anfragen gehen also unverändert ans Netz (Beleg:
+        // e2e/service-worker-cache.spec.ts).
+        navigateFallbackDenylist: [/^\/v1(?:\/|$)/],
       },
     }),
   ],
