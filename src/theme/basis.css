@@ -29,8 +29,9 @@ body {
   color: var(--md-sys-color-on-surface);
 }
 
-/* Sichtbarer Fokus auch für Elemente ohne eigene Komponente (WCAG 2.4.7). */
-:focus-visible {
+/* Sichtbarer Fokus auch für Elemente ohne eigene Komponente (WCAG 2.4.7).
+   :where() hält die Spezifität bei 0, damit Komponenten ihn übersteuern. */
+:where(:focus-visible) {
   outline: var(--md-sys-state-focus-indicator-thickness) solid var(--app-focus-ring-color);
   outline-offset: var(--md-sys-state-focus-indicator-outer-offset);
 }
