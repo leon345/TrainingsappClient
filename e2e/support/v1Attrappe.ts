@@ -22,11 +22,44 @@ export interface MockTimerEinstellung {
   gespeichert: boolean;
 }
 
+export interface MockSatz {
+  id: string;
+  position: number;
+  wiederholungen?: number;
+  dauerSekunden?: number;
+  gewichtKg?: number;
+  pauseSekunden?: number;
+}
+
+export interface MockUebung {
+  id: string;
+  position: number;
+  name: string;
+  variante?: string;
+  saetze: MockSatz[];
+}
+
+export interface MockWorkout {
+  id: string;
+  typ: 'KRAFT' | 'CALISTHENICS';
+  titel: string;
+  startZeit: string;
+  dauerSekunden?: number;
+  notiz?: string;
+  sichtbarkeit: 'PRIVAT' | 'OEFFENTLICH';
+  herkunft: 'MANUELL' | 'IMPORT';
+  erstelltAm: string;
+  geaendertAm: string;
+  version: number;
+  uebungen: MockUebung[];
+}
+
 export interface V1AttrappeOptionen {
   initialAngemeldet?: boolean;
   initialBenutzer?: MockBenutzer;
   initialPasskeys?: MockPasskey[];
   initialTimer?: MockTimerEinstellung;
+  initialWorkouts?: MockWorkout[];
 }
 
 export interface V1AttrappeZustand {
@@ -34,6 +67,7 @@ export interface V1AttrappeZustand {
   benutzer: MockBenutzer | null;
   passkeys: MockPasskey[];
   timer: MockTimerEinstellung;
+  workouts: MockWorkout[];
   naechsterFehler: {
     pfad?: string;
     methode?: string;
@@ -64,6 +98,11 @@ function erzeugePasskeyUuid(nummer: number): string {
   return `aaaaaaaa-aaaa-4aaa-8aaa-${hex}`;
 }
 
+function erzeugeWorkoutUuid(praefix: string, nummer: number): string {
+  const hex = nummer.toString(16).padStart(12, '0');
+  return `${praefix}-4aaa-8aaa-${hex}`;
+}
+
 async function antworteJson(
   route: Route,
   body: unknown,
@@ -83,6 +122,9 @@ export async function installiereV1Attrappe(
   optionen: V1AttrappeOptionen = {},
 ): Promise<V1AttrappeZustand> {
   let passkeyZaehler = optionen.initialPasskeys?.length ?? 0;
+  let workoutZaehler = optionen.initialWorkouts?.length ?? 0;
+  let uebungZaehler = 0;
+  let satzZaehler = 0;
 
   const zustand: V1AttrappeZustand = {
     angemeldet: optionen.initialAngemeldet ?? false,
@@ -91,6 +133,9 @@ export async function installiereV1Attrappe(
     timer: optionen.initialTimer
       ? { ...optionen.initialTimer }
       : { trainingSekunden: 30, pauseSekunden: 10, gespeichert: false },
+    workouts: optionen.initialWorkouts
+      ? optionen.initialWorkouts.map((w) => structuredClone(w))
+      : [],
     naechsterFehler: null,
     letztesRegistrierenCredential: null,
     letztesAnmeldenCredential: null,
@@ -369,6 +414,185 @@ export async function installiereV1Attrappe(
           gespeichert: true,
         };
         await antworteJson(route, zustand.timer);
+        return;
+      }
+    }
+
+    if (pfad === '/v1/workouts') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+
+      if (methode === 'GET') {
+        const typFilter = url.searchParams.get('typ');
+        const gefiltert = zustand.workouts
+          .filter((w) => (!typFilter ? true : w.typ === typFilter))
+          .sort((a, b) => b.startZeit.localeCompare(a.startZeit));
+        await antworteJson(route, gefiltert);
+        return;
+      }
+
+      if (methode === 'POST') {
+        const body = request.postDataJSON() as {
+          typ: 'KRAFT' | 'CALISTHENICS';
+          titel: string;
+          startZeit: string;
+          dauerSekunden?: number;
+          notiz?: string;
+          sichtbarkeit?: 'PRIVAT' | 'OEFFENTLICH';
+          uebungen?: Array<{
+            name: string;
+            variante?: string;
+            saetze?: Array<{
+              wiederholungen?: number;
+              dauerSekunden?: number;
+              gewichtKg?: number;
+              pauseSekunden?: number;
+            }>;
+          }>;
+        };
+
+        workoutZaehler += 1;
+        const jetztIso = '2026-11-19T18:00:00Z';
+        const neu: MockWorkout = {
+          id: erzeugeWorkoutUuid('bbbbbbbb-bbbb', workoutZaehler),
+          typ: body.typ,
+          titel: body.titel.trim(),
+          startZeit: body.startZeit,
+          ...(body.dauerSekunden !== undefined ? { dauerSekunden: body.dauerSekunden } : {}),
+          ...(body.notiz ? { notiz: body.notiz.trim() } : {}),
+          sichtbarkeit: body.sichtbarkeit ?? 'PRIVAT',
+          herkunft: 'MANUELL',
+          erstelltAm: jetztIso,
+          geaendertAm: jetztIso,
+          version: 1,
+          uebungen: (body.uebungen ?? []).map((u, uIndex) => {
+            uebungZaehler += 1;
+            return {
+              id: erzeugeWorkoutUuid('cccccccc-cccc', uebungZaehler),
+              position: uIndex,
+              name: u.name.trim(),
+              ...(u.variante ? { variante: u.variante.trim() } : {}),
+              saetze: (u.saetze ?? []).map((s, sIndex) => {
+                satzZaehler += 1;
+                return {
+                  id: erzeugeWorkoutUuid('dddddddd-dddd', satzZaehler),
+                  position: sIndex,
+                  ...(s.wiederholungen !== undefined ? { wiederholungen: s.wiederholungen } : {}),
+                  ...(s.dauerSekunden !== undefined ? { dauerSekunden: s.dauerSekunden } : {}),
+                  ...(s.gewichtKg !== undefined ? { gewichtKg: s.gewichtKg } : {}),
+                  ...(s.pauseSekunden !== undefined ? { pauseSekunden: s.pauseSekunden } : {}),
+                };
+              }),
+            };
+          }),
+        };
+
+        zustand.workouts.push(neu);
+        await antworteJson(route, neu, 201, { Location: `/v1/workouts/${neu.id}` });
+        return;
+      }
+    }
+
+    const workoutIdTreffer = /^\/v1\/workouts\/([0-9a-f-]+)$/i.exec(pfad);
+    if (workoutIdTreffer) {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+
+      const id = workoutIdTreffer[1];
+      const gefundenIndex = zustand.workouts.findIndex((w) => w.id === id);
+      if (gefundenIndex === -1) {
+        await antworteJson(
+          route,
+          { code: 'WORKOUT_NICHT_GEFUNDEN', meldung: 'Das gesuchte Workout wurde nicht gefunden.' },
+          404,
+        );
+        return;
+      }
+
+      const gefunden = zustand.workouts[gefundenIndex]!;
+
+      if (methode === 'GET') {
+        await antworteJson(route, gefunden);
+        return;
+      }
+
+      if (methode === 'PUT') {
+        const body = request.postDataJSON() as {
+          version: number;
+          typ: 'KRAFT' | 'CALISTHENICS';
+          titel: string;
+          startZeit: string;
+          dauerSekunden?: number;
+          notiz?: string;
+          sichtbarkeit?: 'PRIVAT' | 'OEFFENTLICH';
+          uebungen?: Array<{
+            name: string;
+            variante?: string;
+            saetze?: Array<{
+              wiederholungen?: number;
+              dauerSekunden?: number;
+              gewichtKg?: number;
+              pauseSekunden?: number;
+            }>;
+          }>;
+        };
+
+        if (body.version !== gefunden.version) {
+          await antworteJson(
+            route,
+            {
+              code: 'WORKOUT_VERSIONSKONFLIKT',
+              meldung: 'Das Workout wurde zwischenzeitlich geändert. Bitte lade es neu.',
+            },
+            409,
+          );
+          return;
+        }
+
+        const aktualisiert: MockWorkout = {
+          ...gefunden,
+          typ: body.typ,
+          titel: body.titel.trim(),
+          startZeit: body.startZeit,
+          dauerSekunden: body.dauerSekunden,
+          notiz: body.notiz ? body.notiz.trim() : undefined,
+          sichtbarkeit: body.sichtbarkeit ?? 'PRIVAT',
+          geaendertAm: '2026-11-19T19:00:00Z',
+          version: gefunden.version + 1,
+          uebungen: (body.uebungen ?? []).map((u, uIndex) => {
+            uebungZaehler += 1;
+            return {
+              id: erzeugeWorkoutUuid('cccccccc-cccc', uebungZaehler),
+              position: uIndex,
+              name: u.name.trim(),
+              ...(u.variante ? { variante: u.variante.trim() } : {}),
+              saetze: (u.saetze ?? []).map((s, sIndex) => {
+                satzZaehler += 1;
+                return {
+                  id: erzeugeWorkoutUuid('dddddddd-dddd', satzZaehler),
+                  position: sIndex,
+                  ...(s.wiederholungen !== undefined ? { wiederholungen: s.wiederholungen } : {}),
+                  ...(s.dauerSekunden !== undefined ? { dauerSekunden: s.dauerSekunden } : {}),
+                  ...(s.gewichtKg !== undefined ? { gewichtKg: s.gewichtKg } : {}),
+                  ...(s.pauseSekunden !== undefined ? { pauseSekunden: s.pauseSekunden } : {}),
+                };
+              }),
+            };
+          }),
+        };
+
+        zustand.workouts[gefundenIndex] = aktualisiert;
+        await antworteJson(route, aktualisiert);
+        return;
+      }
+
+      if (methode === 'DELETE') {
+        zustand.workouts.splice(gefundenIndex, 1);
+        await route.fulfill({ status: 204 });
         return;
       }
     }

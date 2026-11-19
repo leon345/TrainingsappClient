@@ -107,7 +107,52 @@ test.describe('Fullstack-Integration gegen laufenden Quarkus-Server (Chromium CD
       await expect(page.getByRole('heading', { level: 2, name: benutzername })).toBeVisible();
       await expect(page.getByText('YubiKey Ersatz', { exact: true })).toBeVisible();
 
-      // 8) Passkey 2 löschen -> letzter Passkey bleibt geschützt
+      // 8) Workout-Tracking-Flow (Calisthenics anlegen, Reload pruefen, bearbeiten, loeschen)
+      await nav.getByRole('link', { name: 'Workouts' }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Workouts' })).toBeVisible();
+      await page.getByRole('link', { name: 'Neues Workout' }).click();
+      await expect(page.getByRole('heading', { level: 1, name: 'Neues Workout' })).toBeVisible();
+
+      await page.getByRole('button', { name: 'Calisthenics' }).click();
+      await page.getByLabel(/^Titel/i).fill('Fullstack Calisthenics');
+      await page.getByLabel(/Dauer \(Sekunden, optional\)/i).fill('2700');
+      await page.getByRole('button', { name: 'Übung hinzufügen' }).click();
+      await page.getByLabel(/^Übungsname/i).fill('Front Lever');
+      await page.getByLabel(/Variante/i).fill('Tuck');
+      await page.getByLabel(/Dauer \(Sek\.\)/i).fill('20');
+      await page.getByLabel(/Pause \(Sek\.\)/i).fill('90');
+      await page.getByRole('button', { name: 'Workout speichern' }).click();
+
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Fullstack Calisthenics' }),
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText('Tuck', { exact: true })).toBeVisible();
+
+      // Reload pruefen
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Fullstack Calisthenics' }),
+      ).toBeVisible();
+      await expect(page.getByText('45:00')).toBeVisible();
+
+      // Bearbeiten
+      await page.getByRole('button', { name: 'Bearbeiten' }).click();
+      await page.getByLabel(/^Titel/i).fill('Fullstack Calisthenics Bearbeitet');
+      await page.getByRole('button', { name: 'Änderungen speichern' }).click();
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Fullstack Calisthenics Bearbeitet' }),
+      ).toBeVisible();
+
+      // Loeschen
+      await page.getByRole('button', { name: 'Löschen' }).click();
+      const workoutLoeschDialog = page.getByRole('dialog', { name: 'Workout löschen?' });
+      await workoutLoeschDialog.getByRole('button', { name: 'Löschen' }).click();
+      await expect(page).toHaveURL(/\/workouts$/);
+      await expect(page.getByText('Fullstack Calisthenics Bearbeitet')).toBeHidden();
+
+      // 9) Passkey 2 löschen -> letzter Passkey bleibt geschützt
+      await nav.getByRole('link', { name: 'Konto' }).click();
+      await expect(page.getByText('YubiKey Ersatz', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Passkey YubiKey Ersatz löschen' }).click();
       const loeschDialog = page.getByRole('dialog', { name: 'Passkey löschen?' });
       await loeschDialog.getByRole('button', { name: 'Löschen' }).click();
