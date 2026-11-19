@@ -30,6 +30,8 @@ import { DatenschutzSeite } from './pages/DatenschutzSeite';
 import { EntdeckenSeite } from './pages/EntdeckenSeite';
 import { KontoSeite } from './pages/KontoSeite';
 import { TimerSeite } from './pages/TimerSeite';
+import { WorkoutDetailSeite } from './pages/WorkoutDetailSeite';
+import { WorkoutNeuSeite } from './pages/WorkoutNeuSeite';
 import { WorkoutsSeite } from './pages/WorkoutsSeite';
 import { appTheme } from './theme/theme';
 
@@ -46,13 +48,21 @@ const NAVIGATIONSPUNKTE: readonly NavigationsPunkt[] = [
   { pfad: '/konto', label: 'Konto', icon: <PersonOutlineOutlinedIcon /> },
 ];
 
+function istNavPunktAktiv(pfad: NavigationsPunkt['pfad'], aktuellerPfad: string): boolean {
+  if (pfad === '/') {
+    return aktuellerPfad === '/';
+  }
+  return aktuellerPfad === pfad || aktuellerPfad.startsWith(`${pfad}/`);
+}
+
 function AppShell() {
   const theme = useTheme();
   const istDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const { pathname } = useLocation();
 
   const istTimerRoute = pathname === '/';
-  const aktiverNavPfad = NAVIGATIONSPUNKTE.some((p) => p.pfad === pathname) ? pathname : false;
+  const aktiverNavPunkt = NAVIGATIONSPUNKTE.find((p) => istNavPunktAktiv(p.pfad, pathname));
+  const aktiverNavPfad = aktiverNavPunkt ? aktiverNavPunkt.pfad : false;
 
   return (
     <Box
@@ -91,7 +101,7 @@ function AppShell() {
 
           <List sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             {NAVIGATIONSPUNKTE.map((punkt) => {
-              const aktiv = pathname === punkt.pfad;
+              const aktiv = istNavPunktAktiv(punkt.pfad, pathname);
               return (
                 <ListItem key={punkt.pfad} disablePadding>
                   <ListItemButton
@@ -175,6 +185,8 @@ function AppShell() {
           <Routes>
             <Route path="/" element={null} />
             <Route path="/workouts" element={<WorkoutsSeite />} />
+            <Route path="/workouts/neu" element={<WorkoutNeuSeite />} />
+            <Route path="/workouts/:id" element={<WorkoutDetailSeite />} />
             <Route path="/entdecken" element={<EntdeckenSeite />} />
             <Route path="/konto" element={<KontoSeite />} />
             <Route path="/datenschutz" element={<DatenschutzSeite />} />
@@ -240,7 +252,7 @@ function AppShell() {
                 value={punkt.pfad}
                 label={punkt.label}
                 icon={punkt.icon}
-                aria-current={pathname === punkt.pfad ? 'page' : undefined}
+                aria-current={istNavPunktAktiv(punkt.pfad, pathname) ? 'page' : undefined}
               />
             ))}
           </BottomNavigation>
