@@ -1,0 +1,83 @@
+openapi: 3.1.0
+info:
+  title: Trainingsapp API
+  version: 1.0.0
+  description: >
+    Initialer OpenAPI-Vertrag (GS-01) zwischen TrainingsappServer und TrainingsappClient.
+    Wird bei Backend-Änderungen aus dem exportierten Quarkus-Schema aktualisiert und via
+    `npm run api:generate` nach `src/api/schema.d.ts` übersetzt.
+servers:
+  - url: /
+paths:
+  /v1/info:
+    get:
+      operationId: systemInfoLesen
+      summary: Liefert grundlegende Systeminformationen der API
+      tags:
+        - System
+      responses:
+        "200":
+          description: Systeminformationen erfolgreich gelesen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemInfoV1"
+        "401":
+          description: Authentifizierung erforderlich
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "429":
+          description: Zu viele Anfragen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "500":
+          description: Interner Serverfehler
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+components:
+  schemas:
+    SystemInfoV1:
+      type: object
+      required:
+        - name
+        - version
+        - zeitstempel
+      properties:
+        name:
+          type: string
+          description: Anwendungsname
+          example: trainingsapp-server
+        version:
+          type: string
+          description: Version der API-Instanz
+          example: 0.1.0
+        zeitstempel:
+          type: string
+          format: date-time
+          description: Aktuelle Serverzeit in UTC (ISO-8601)
+          example: "2026-11-19T12:00:00Z"
+    FehlerV1:
+      type: object
+      required:
+        - code
+        - meldung
+      properties:
+        code:
+          type: string
+          description: Maschinenlesbarer Fehlercode
+          example: NICHT_ANGEMELDET
+        meldung:
+          type: string
+          description: Menschenlesbare Fehlermeldung auf Deutsch
+          example: Anmeldung erforderlich.
+        details:
+          type: array
+          description: Optionale Detailmeldungen (z. B. Validierungsfehler je Feld)
+          items:
+            type: string
