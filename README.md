@@ -1,3 +1,6 @@
+> [!NOTE]
+> **KI-Hinweis:** Dieses Projekt wurde vollständig mit KI-Agenten erstellt (Proof of Concept / „vibe-coded“). Keine Gewähr für Sicherheit, Vollständigkeit oder Verfügbarkeit.
+
 # TrainingsappClient
 
 Frontend der Trainingsapp (Intervalltimer, Passkey-Konto, Workout-Tracking, Teilen/Einladungen und DSGVO-Funktionen) als Progressive Web App (PWA). Das zugehörige Backend liegt in [TrainingsappServer](https://github.com/leon345/TrainingsappServer).
