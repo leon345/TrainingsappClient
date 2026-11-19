@@ -5,6 +5,7 @@ import {
   istBenutzerV1,
   istFehlerV1,
   istTimerEinstellungV1,
+  istWorkoutV1,
 } from './client';
 
 describe('apiClient (openapi-fetch)', () => {
@@ -158,5 +159,64 @@ describe('apiClient (openapi-fetch)', () => {
     expect(extrahiereFehlermeldung({ unerwartet: true })).toBe(
       'Unbekannter Fehler bei der Serveranfrage.',
     );
+  });
+
+  it('unterstuetzt typisierte /v1/workouts-Aufrufe und prueft WorkoutV1-Struktur', async () => {
+    const beispielWorkout = {
+      id: '22222222-2222-4222-8222-222222222222',
+      typ: 'CALISTHENICS' as const,
+      titel: 'Oberkörper Calisthenics',
+      startZeit: '2026-11-19T18:00:00Z',
+      dauerSekunden: 2700,
+      notiz: 'Gute Spannung',
+      sichtbarkeit: 'PRIVAT' as const,
+      herkunft: 'MANUELL' as const,
+      uebungen: [
+        {
+          id: '33333333-3333-4333-8333-333333333333',
+          position: 0,
+          name: 'Front Lever',
+          variante: 'Tuck',
+          saetze: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              position: 0,
+              dauerSekunden: 20,
+              pauseSekunden: 90,
+            },
+          ],
+        },
+      ],
+      erstelltAm: '2026-11-19T18:00:00Z',
+      geaendertAm: '2026-11-19T18:00:00Z',
+      version: 0,
+    };
+
+    const mockFetch = vi.fn<typeof fetch>(async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      if (request.method === 'GET' && request.url.includes('typ=CALISTHENICS')) {
+        return new Response(JSON.stringify([beispielWorkout]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify(beispielWorkout), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    const client = erzeugeApiClient({
+      baseUrl: 'http://localhost:4173',
+      fetch: mockFetch,
+    });
+
+    const liste = await client.GET('/v1/workouts', {
+      params: { query: { typ: 'CALISTHENICS' } },
+    });
+    expect(liste.response.status).toBe(200);
+    expect(liste.data).toHaveLength(1);
+    expect(istWorkoutV1(liste.data?.[0])).toBe(true);
+    expect(istWorkoutV1({ id: 'nur-id' })).toBe(false);
   });
 });

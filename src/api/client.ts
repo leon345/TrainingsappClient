@@ -12,6 +12,16 @@ export type PasskeyAnmeldeCredentialV1 = components['schemas']['PasskeyAnmeldeCr
 export type TimerEinstellungV1 = components['schemas']['TimerEinstellungV1'];
 export type TimerEinstellungAktualisierenV1 =
   components['schemas']['TimerEinstellungAktualisierenV1'];
+export type WorkoutTyp = components['schemas']['WorkoutTyp'];
+export type Sichtbarkeit = components['schemas']['Sichtbarkeit'];
+export type Herkunft = components['schemas']['Herkunft'];
+export type SatzEingabeV1 = components['schemas']['SatzEingabeV1'];
+export type SatzV1 = components['schemas']['SatzV1'];
+export type UebungEingabeV1 = components['schemas']['UebungEingabeV1'];
+export type UebungV1 = components['schemas']['UebungV1'];
+export type WorkoutErstellenV1 = components['schemas']['WorkoutErstellenV1'];
+export type WorkoutAktualisierenV1 = components['schemas']['WorkoutAktualisierenV1'];
+export type WorkoutV1 = components['schemas']['WorkoutV1'];
 
 export function erzeugeApiClient(optionen?: ClientOptions) {
   return createClient<paths>({
@@ -58,6 +68,23 @@ export function istTimerEinstellungV1(wert: unknown): wert is TimerEinstellungV1
     typeof kandidat.trainingSekunden === 'number' &&
     typeof kandidat.pauseSekunden === 'number' &&
     typeof kandidat.gespeichert === 'boolean'
+  );
+}
+
+export function istWorkoutV1(wert: unknown): wert is WorkoutV1 {
+  if (typeof wert !== 'object' || wert === null) {
+    return false;
+  }
+
+  const kandidat = wert as Record<string, unknown>;
+  return (
+    typeof kandidat.id === 'string' &&
+    (kandidat.typ === 'KRAFT' || kandidat.typ === 'CALISTHENICS') &&
+    typeof kandidat.titel === 'string' &&
+    typeof kandidat.startZeit === 'string' &&
+    (kandidat.sichtbarkeit === 'PRIVAT' || kandidat.sichtbarkeit === 'OEFFENTLICH') &&
+    Array.isArray(kandidat.uebungen) &&
+    typeof kandidat.version === 'number'
   );
 }
 

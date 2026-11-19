@@ -221,16 +221,68 @@ export interface paths {
         };
         /**
          * Intervalltimer-Einstellung abrufen
-         * @description Liefert die gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers (oder Standardwerte mit gespeichert=false).
+         * @description Liefert die gespeicherte Timer-Einstellung des angemeldeten Benutzers oder den Standard (30 s Training, 10 s Pause, gespeichert=false).
          */
         get: operations["getTimerEinstellungV1"];
         /**
          * Intervalltimer-Einstellung speichern
-         * @description Speichert oder aktualisiert die Intervalltimer-Einstellung des angemeldeten Benutzers.
+         * @description Validiert und speichert die Intervalltimer-Einstellung des angemeldeten Benutzers in ganzen Sekunden.
          */
         put: operations["putTimerEinstellungV1"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eigene Workouts auflisten
+         * @description Liefert alle eigenen Workouts des angemeldeten Benutzers absteigend nach Startzeit, optional gefiltert nach Typ.
+         */
+        get: operations["listeWorkoutsV1"];
+        put?: never;
+        /**
+         * Neues Workout anlegen
+         * @description Erstellt ein neues manuelles Kraft- oder Calisthenics-Workout (Standardsichtbarkeit PRIVAT).
+         */
+        post: operations["erstelleWorkoutV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workout-Details abrufen
+         * @description Liefert ein einzelnes Workout inkl. aller Übungen und Sätze. Fremde private Workouts liefern 404.
+         */
+        get: operations["getWorkoutV1"];
+        /**
+         * Eigenes Workout aktualisieren
+         * @description Aktualisiert ein eigenes Workout vollständig unter Prüfung der optimistischen Sperrversion.
+         */
+        put: operations["aktualisiereWorkoutV1"];
+        post?: never;
+        /**
+         * Eigenes Workout löschen
+         * @description Löscht ein eigenes Workout samt zugehörigen Übungen und Sätzen.
+         */
+        delete: operations["loescheWorkoutV1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -285,6 +337,8 @@ export interface components {
              */
             meldung: string;
         };
+        /** @enum {string} */
+        Herkunft: "MANUELL" | "APPLE_HEALTH";
         /**
          * Format: date-time
          * @example 2022-03-10T16:15:50Z
@@ -415,6 +469,61 @@ export interface components {
              */
             einwilligungErteilt: boolean;
         };
+        /** @description Eingabedaten für einen einzelnen Satz (Wiederholungen und/oder Haltedauer in ganzen Sekunden) */
+        SatzEingabeV1: {
+            /**
+             * Format: int32
+             * @description Anzahl Wiederholungen
+             * @example 10
+             */
+            wiederholungen?: number;
+            /**
+             * Format: int32
+             * @description Halte- oder Satzdauer in ganzen Sekunden
+             * @example 30
+             */
+            dauerSekunden?: number;
+            /**
+             * @description Zusatz- oder Trainingsgewicht in Kilogramm
+             * @example 60.5
+             */
+            gewichtKg?: number;
+            /**
+             * Format: int32
+             * @description Satzpause in ganzen Sekunden
+             * @example 90
+             */
+            pauseSekunden?: number;
+        };
+        /** @description Gespeicherter Satz einer Übung */
+        SatzV1: {
+            /** @description Eindeutige Satz-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * Format: int32
+             * @description 0-basierte Reihenfolge innerhalb der Übung
+             */
+            position: number;
+            /**
+             * Format: int32
+             * @description Anzahl Wiederholungen
+             */
+            wiederholungen?: number;
+            /**
+             * Format: int32
+             * @description Halte- oder Satzdauer in ganzen Sekunden
+             */
+            dauerSekunden?: number;
+            /** @description Zusatz- oder Trainingsgewicht in Kilogramm */
+            gewichtKg?: number;
+            /**
+             * Format: int32
+             * @description Satzpause in ganzen Sekunden
+             */
+            pauseSekunden?: number;
+        };
+        /** @enum {string} */
+        Sichtbarkeit: "PRIVAT" | "OEFFENTLICH";
         /** @description Systeminformationen des Servers */
         SystemInfoV1: {
             /**
@@ -428,39 +537,77 @@ export interface components {
              */
             version: string;
         };
-        /** @description Anfrage zum Aktualisieren der Intervalltimer-Einstellung */
+        /** @description Anfrage zum Speichern der benutzerspezifischen Intervalltimer-Einstellung in ganzen Sekunden */
         TimerEinstellungAktualisierenV1: {
             /**
-             * @description Trainingsdauer in ganzen Sekunden (1..86400)
+             * Format: int32
+             * @description Trainingsdauer in ganzen Sekunden
              * @example 45
              */
             trainingSekunden: number;
             /**
-             * @description Pausendauer in ganzen Sekunden (0..86400)
+             * Format: int32
+             * @description Pausendauer in ganzen Sekunden
              * @example 15
              */
             pauseSekunden: number;
         };
-        /** @description Gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers */
+        /** @description Intervalltimer-Einstellung eines Benutzers in ganzen Sekunden */
         TimerEinstellungV1: {
             /**
-             * @description Trainingsdauer in ganzen Sekunden (1..86400)
+             * Format: int32
+             * @description Trainingsdauer in ganzen Sekunden
              * @example 30
              */
             trainingSekunden: number;
             /**
-             * @description Pausendauer in ganzen Sekunden (0..86400)
+             * Format: int32
+             * @description Pausendauer in ganzen Sekunden
              * @example 10
              */
             pauseSekunden: number;
-            /**
-             * @description Gibt an, ob bereits eine benutzerdefinierte Einstellung gespeichert wurde
-             * @example true
-             */
+            /** @description Gibt an, ob bereits eine benutzerspezifische Einstellung gespeichert wurde */
             readonly gespeichert: boolean;
         };
         /** Format: uuid */
         UUID: string;
+        /** @description Eingabedaten für eine Übung innerhalb eines Workouts inkl. optionaler Progressionsvariante */
+        UebungEingabeV1: {
+            /**
+             * @description Name der Übung
+             * @example Front Lever
+             */
+            name: string;
+            /**
+             * @description Optionale Progressionsstufe oder Variante
+             * @example Tuck
+             */
+            variante?: string;
+            /** @description Sätze der Übung in Ausführungsreihenfolge */
+            saetze?: components["schemas"]["SatzEingabeV1"][];
+        };
+        /** @description Gespeicherte Übung eines Workouts inkl. Sätzen */
+        UebungV1: {
+            /** @description Eindeutige Übungs-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * Format: int32
+             * @description 0-basierte Reihenfolge innerhalb des Workouts
+             */
+            position: number;
+            /**
+             * @description Name der Übung
+             * @example Front Lever
+             */
+            name: string;
+            /**
+             * @description Optionale Progressionsstufe oder Variante
+             * @example Tuck
+             */
+            variante?: string;
+            /** @description Sätze der Übung in Ausführungsreihenfolge */
+            saetze: components["schemas"]["SatzV1"][];
+        };
         /** @description AuthenticatorAssertionResponse */
         WebAuthnAnmeldeAntwortV1: {
             /** @description Base64URL-kodiertes clientDataJSON */
@@ -483,6 +630,116 @@ export interface components {
             clientDataJSON: string;
             /** @description Base64URL-kodiertes attestationObject */
             attestationObject: string;
+        };
+        /** @description Anfrage zum vollständigen Aktualisieren eines Workouts inkl. optimistischer Sperrversion */
+        WorkoutAktualisierenV1: {
+            /**
+             * Format: int64
+             * @description Erwartete Version für optimistische Sperre
+             * @example 0
+             */
+            version: number;
+            /**
+             * @description Art des Workouts
+             * @example KRAFT
+             */
+            typ: components["schemas"]["WorkoutTyp"];
+            /**
+             * @description Titel des Workouts
+             * @example Unterkörper Kraft
+             */
+            titel: string;
+            /**
+             * @description Startzeitpunkt des Workouts (UTC)
+             * @example 2026-11-19T18:00:00Z
+             */
+            startZeit: components["schemas"]["Instant"];
+            /**
+             * Format: int32
+             * @description Gesamtdauer des Workouts in ganzen Sekunden
+             * @example 3600
+             */
+            dauerSekunden?: number;
+            /** @description Optionale Trainingsnotiz */
+            notiz?: string;
+            /** @description Sichtbarkeit des Workouts (falls null bleibt die bisherige Sichtbarkeit erhalten) */
+            sichtbarkeit?: components["schemas"]["Sichtbarkeit"];
+            /** @description Übungen des Workouts in Ausführungsreihenfolge */
+            uebungen?: components["schemas"]["UebungEingabeV1"][];
+        };
+        /** @description Anfrage zum Erstellen eines neuen Kraft- oder Calisthenics-Workouts */
+        WorkoutErstellenV1: {
+            /**
+             * @description Art des Workouts
+             * @example CALISTHENICS
+             */
+            typ: components["schemas"]["WorkoutTyp"];
+            /**
+             * @description Titel des Workouts
+             * @example Oberkörper Calisthenics
+             */
+            titel: string;
+            /**
+             * @description Startzeitpunkt des Workouts (UTC)
+             * @example 2026-11-19T18:00:00Z
+             */
+            startZeit: components["schemas"]["Instant"];
+            /**
+             * Format: int32
+             * @description Gesamtdauer des Workouts in ganzen Sekunden
+             * @example 2700
+             */
+            dauerSekunden?: number;
+            /**
+             * @description Optionale Trainingsnotiz
+             * @example Gute Spannung im Core
+             */
+            notiz?: string;
+            /**
+             * @description Sichtbarkeit des Workouts (Standard: PRIVAT)
+             * @example PRIVAT
+             */
+            sichtbarkeit?: components["schemas"]["Sichtbarkeit"];
+            /** @description Übungen des Workouts in Ausführungsreihenfolge */
+            uebungen?: components["schemas"]["UebungEingabeV1"][];
+        };
+        /** @enum {string} */
+        WorkoutTyp: "KRAFT" | "CALISTHENICS";
+        /** @description Gespeichertes Kraft- oder Calisthenics-Workout inkl. Übungen und Sätzen */
+        WorkoutV1: {
+            /** @description Eindeutige Workout-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /** @description Art des Workouts */
+            typ: components["schemas"]["WorkoutTyp"];
+            /**
+             * @description Titel des Workouts
+             * @example Oberkörper Calisthenics
+             */
+            titel: string;
+            /** @description Startzeitpunkt des Workouts (UTC) */
+            startZeit: components["schemas"]["Instant"];
+            /**
+             * Format: int32
+             * @description Gesamtdauer des Workouts in ganzen Sekunden
+             */
+            dauerSekunden?: number;
+            /** @description Optionale Trainingsnotiz */
+            notiz?: string;
+            /** @description Sichtbarkeit des Workouts */
+            sichtbarkeit: components["schemas"]["Sichtbarkeit"];
+            /** @description Herkunft des Workouts */
+            herkunft: components["schemas"]["Herkunft"];
+            /** @description Übungen des Workouts in Ausführungsreihenfolge */
+            uebungen: components["schemas"]["UebungV1"][];
+            /** @description Erstellungszeitpunkt (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+            /** @description Zeitpunkt der letzten Änderung (UTC) */
+            geaendertAm: components["schemas"]["Instant"];
+            /**
+             * Format: int64
+             * @description Version für optimistische Sperre
+             */
+            version: number;
         };
     };
     responses: never;
@@ -1063,6 +1320,13 @@ export interface operations {
                     "application/json": components["schemas"]["FehlerV1"];
                 };
             };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     putTimerEinstellungV1: {
@@ -1087,7 +1351,7 @@ export interface operations {
                     "application/json": components["schemas"]["TimerEinstellungV1"];
                 };
             };
-            /** @description Ungültige Timer-Einstellung */
+            /** @description Ungültige Zeitdauern */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1098,6 +1362,264 @@ export interface operations {
             };
             /** @description Nicht angemeldet */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listeWorkoutsV1: {
+        parameters: {
+            query?: {
+                /** @description Optionaler Filter nach Workout-Typ (KRAFT oder CALISTHENICS) */
+                typ?: components["schemas"]["WorkoutTyp"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workouts erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"][];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    erstelleWorkoutV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutErstellenV1"];
+            };
+        };
+        responses: {
+            /** @description Workout erfolgreich erstellt */
+            201: {
+                headers: {
+                    /** @description Pfad zum neu erstellten Workout */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"];
+                };
+            };
+            /** @description Ungültige Eingabedaten */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getWorkoutV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workout erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    aktualisiereWorkoutV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutAktualisierenV1"];
+            };
+        };
+        responses: {
+            /** @description Workout erfolgreich aktualisiert */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"];
+                };
+            };
+            /** @description Ungültige Eingabedaten */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Versionskonflikt bei optimistischer Sperre */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    loescheWorkoutV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workout erfolgreich gelöscht */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout nicht gefunden */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

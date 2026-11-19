@@ -71,6 +71,11 @@ components:
           description: Verständliche Fehlerbeschreibung
           examples:
           - Die Anfrage enthält ungültige Eingaben.
+    Herkunft:
+      type: string
+      enum:
+      - MANUELL
+      - APPLE_HEALTH
     Instant:
       type: string
       format: date-time
@@ -292,6 +297,87 @@ components:
           description: Ausdrückliche Einwilligung in die Datenverarbeitung
           examples:
           - true
+    SatzEingabeV1:
+      description: Eingabedaten für einen einzelnen Satz (Wiederholungen und/oder
+        Haltedauer in ganzen Sekunden)
+      type: object
+      properties:
+        wiederholungen:
+          type: integer
+          format: int32
+          maximum: 10000
+          minimum: 1
+          description: Anzahl Wiederholungen
+          examples:
+          - 10
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Halte- oder Satzdauer in ganzen Sekunden
+          examples:
+          - 30
+        gewichtKg:
+          type: number
+          maximum: 9999.99
+          minimum: 0
+          description: Zusatz- oder Trainingsgewicht in Kilogramm
+          examples:
+          - 60.5
+          multipleOf: 0.01
+        pauseSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 0
+          description: Satzpause in ganzen Sekunden
+          examples:
+          - 90
+    SatzV1:
+      description: Gespeicherter Satz einer Übung
+      type: object
+      required:
+      - id
+      - position
+      properties:
+        id:
+          description: Eindeutige Satz-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        position:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 0-basierte Reihenfolge innerhalb der Übung
+        wiederholungen:
+          type: integer
+          format: int32
+          maximum: 10000
+          minimum: 1
+          description: Anzahl Wiederholungen
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Halte- oder Satzdauer in ganzen Sekunden
+        gewichtKg:
+          type: number
+          maximum: 9999.99
+          minimum: 0
+          description: Zusatz- oder Trainingsgewicht in Kilogramm
+        pauseSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 0
+          description: Satzpause in ganzen Sekunden
+    Sichtbarkeit:
+      type: string
+      enum:
+      - PRIVAT
+      - OEFFENTLICH
     SystemInfoV1:
       description: Systeminformationen des Servers
       type: object
@@ -310,7 +396,8 @@ components:
           examples:
           - 0.1.0-SNAPSHOT
     TimerEinstellungAktualisierenV1:
-      description: Anfrage zum Aktualisieren der Intervalltimer-Einstellung
+      description: Anfrage zum Speichern der benutzerspezifischen Intervalltimer-Einstellung
+        in ganzen Sekunden
       type: object
       required:
       - trainingSekunden
@@ -318,20 +405,22 @@ components:
       properties:
         trainingSekunden:
           type: integer
-          minimum: 1
+          format: int32
           maximum: 86400
-          description: Trainingsdauer in ganzen Sekunden (1..86400)
+          minimum: 1
+          description: Trainingsdauer in ganzen Sekunden
           examples:
           - 45
         pauseSekunden:
           type: integer
-          minimum: 0
+          format: int32
           maximum: 86400
-          description: Pausendauer in ganzen Sekunden (0..86400)
+          minimum: 0
+          description: Pausendauer in ganzen Sekunden
           examples:
           - 15
     TimerEinstellungV1:
-      description: Gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers
+      description: Intervalltimer-Einstellung eines Benutzers in ganzen Sekunden
       type: object
       required:
       - trainingSekunden
@@ -340,28 +429,87 @@ components:
       properties:
         trainingSekunden:
           type: integer
-          minimum: 1
+          format: int32
           maximum: 86400
-          description: Trainingsdauer in ganzen Sekunden (1..86400)
+          minimum: 1
+          description: Trainingsdauer in ganzen Sekunden
           examples:
           - 30
         pauseSekunden:
           type: integer
-          minimum: 0
+          format: int32
           maximum: 86400
-          description: Pausendauer in ganzen Sekunden (0..86400)
+          minimum: 0
+          description: Pausendauer in ganzen Sekunden
           examples:
           - 10
         gespeichert:
           type: boolean
+          description: "Gibt an, ob bereits eine benutzerspezifische Einstellung gespeichert\
+            \ wurde"
           readOnly: true
-          description: Gibt an, ob bereits eine benutzerdefinierte Einstellung gespeichert wurde
-          examples:
-          - true
     UUID:
       type: string
       format: uuid
       pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UebungEingabeV1:
+      description: Eingabedaten für eine Übung innerhalb eines Workouts inkl. optionaler
+        Progressionsvariante
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Name der Übung
+          examples:
+          - Front Lever
+          pattern: \S
+        variante:
+          type: string
+          maxLength: 100
+          description: Optionale Progressionsstufe oder Variante
+          examples:
+          - Tuck
+        saetze:
+          type: array
+          items:
+            $ref: "#/components/schemas/SatzEingabeV1"
+          description: Sätze der Übung in Ausführungsreihenfolge
+    UebungV1:
+      description: Gespeicherte Übung eines Workouts inkl. Sätzen
+      type: object
+      required:
+      - id
+      - position
+      - name
+      - saetze
+      properties:
+        id:
+          description: Eindeutige Übungs-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        position:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 0-basierte Reihenfolge innerhalb des Workouts
+        name:
+          type: string
+          description: Name der Übung
+          examples:
+          - Front Lever
+        variante:
+          type: string
+          description: Optionale Progressionsstufe oder Variante
+          examples:
+          - Tuck
+        saetze:
+          type: array
+          items:
+            $ref: "#/components/schemas/SatzV1"
+          description: Sätze der Übung in Ausführungsreihenfolge
     WebAuthnAnmeldeAntwortV1:
       type: object
       description: AuthenticatorAssertionResponse
@@ -410,6 +558,189 @@ components:
           type: string
           description: Base64URL-kodiertes attestationObject
           pattern: \S
+    WorkoutAktualisierenV1:
+      description: Anfrage zum vollständigen Aktualisieren eines Workouts inkl. optimistischer
+        Sperrversion
+      type: object
+      required:
+      - version
+      - typ
+      - titel
+      - startZeit
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Erwartete Version für optimistische Sperre
+          examples:
+          - 0
+        typ:
+          description: Art des Workouts
+          type: string
+          examples:
+          - KRAFT
+          $ref: "#/components/schemas/WorkoutTyp"
+        titel:
+          type: string
+          maxLength: 100
+          description: Titel des Workouts
+          examples:
+          - Unterkörper Kraft
+          pattern: \S
+        startZeit:
+          description: Startzeitpunkt des Workouts (UTC)
+          type: string
+          examples:
+          - 2026-11-19T18:00:00Z
+          $ref: "#/components/schemas/Instant"
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Gesamtdauer des Workouts in ganzen Sekunden
+          examples:
+          - 3600
+        notiz:
+          type: string
+          maxLength: 500
+          description: Optionale Trainingsnotiz
+        sichtbarkeit:
+          description: Sichtbarkeit des Workouts (falls null bleibt die bisherige
+            Sichtbarkeit erhalten)
+          type: string
+          $ref: "#/components/schemas/Sichtbarkeit"
+        uebungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/UebungEingabeV1"
+          description: Übungen des Workouts in Ausführungsreihenfolge
+    WorkoutErstellenV1:
+      description: Anfrage zum Erstellen eines neuen Kraft- oder Calisthenics-Workouts
+      type: object
+      required:
+      - typ
+      - titel
+      - startZeit
+      properties:
+        typ:
+          description: Art des Workouts
+          type: string
+          examples:
+          - CALISTHENICS
+          $ref: "#/components/schemas/WorkoutTyp"
+        titel:
+          type: string
+          maxLength: 100
+          description: Titel des Workouts
+          examples:
+          - Oberkörper Calisthenics
+          pattern: \S
+        startZeit:
+          description: Startzeitpunkt des Workouts (UTC)
+          type: string
+          examples:
+          - 2026-11-19T18:00:00Z
+          $ref: "#/components/schemas/Instant"
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Gesamtdauer des Workouts in ganzen Sekunden
+          examples:
+          - 2700
+        notiz:
+          type: string
+          maxLength: 500
+          description: Optionale Trainingsnotiz
+          examples:
+          - Gute Spannung im Core
+        sichtbarkeit:
+          description: "Sichtbarkeit des Workouts (Standard: PRIVAT)"
+          type: string
+          examples:
+          - PRIVAT
+          $ref: "#/components/schemas/Sichtbarkeit"
+        uebungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/UebungEingabeV1"
+          description: Übungen des Workouts in Ausführungsreihenfolge
+    WorkoutTyp:
+      type: string
+      enum:
+      - KRAFT
+      - CALISTHENICS
+    WorkoutV1:
+      description: Gespeichertes Kraft- oder Calisthenics-Workout inkl. Übungen und
+        Sätzen
+      type: object
+      required:
+      - id
+      - typ
+      - titel
+      - startZeit
+      - sichtbarkeit
+      - herkunft
+      - uebungen
+      - erstelltAm
+      - geaendertAm
+      - version
+      properties:
+        id:
+          description: Eindeutige Workout-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        typ:
+          description: Art des Workouts
+          type: string
+          $ref: "#/components/schemas/WorkoutTyp"
+        titel:
+          type: string
+          description: Titel des Workouts
+          examples:
+          - Oberkörper Calisthenics
+        startZeit:
+          description: Startzeitpunkt des Workouts (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Gesamtdauer des Workouts in ganzen Sekunden
+        notiz:
+          type: string
+          description: Optionale Trainingsnotiz
+        sichtbarkeit:
+          description: Sichtbarkeit des Workouts
+          type: string
+          $ref: "#/components/schemas/Sichtbarkeit"
+        herkunft:
+          description: Herkunft des Workouts
+          type: string
+          $ref: "#/components/schemas/Herkunft"
+        uebungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/UebungV1"
+          description: Übungen des Workouts in Ausführungsreihenfolge
+        erstelltAm:
+          description: Erstellungszeitpunkt (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        geaendertAm:
+          description: Zeitpunkt der letzten Änderung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Version für optimistische Sperre
 info:
   description: Versionierte REST-API der Trainingsapp (/v1)
   title: Trainingsapp API
@@ -422,7 +753,9 @@ tags:
 - name: System
   description: Systeminformationen des Servers
 - name: Timer
-  description: Intervalltimer-Einstellungen des angemeldeten Benutzers
+  description: Synchronisierte Intervalltimer-Einstellungen
+- name: Workouts
+  description: Verwaltung von Kraft- und Calisthenics-Workouts
 paths:
   /v1/abmelden:
     post:
@@ -819,32 +1152,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/FehlerV1"
   /v1/timer/einstellung:
-    get:
-      summary: Intervalltimer-Einstellung abrufen
-      description: Liefert die gespeicherte Intervalltimer-Einstellung des angemeldeten
-        Benutzers (oder Standardwerte mit gespeichert=false).
-      operationId: getTimerEinstellungV1
-      tags:
-      - Timer
-      responses:
-        "200":
-          description: Timer-Einstellung erfolgreich geladen
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TimerEinstellungV1"
-        "401":
-          description: Nicht angemeldet
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FehlerV1"
-      security:
-      - SecurityScheme: []
     put:
       summary: Intervalltimer-Einstellung speichern
-      description: Speichert oder aktualisiert die Intervalltimer-Einstellung des
-        angemeldeten Benutzers.
+      description: Validiert und speichert die Intervalltimer-Einstellung des angemeldeten
+        Benutzers in ganzen Sekunden.
       operationId: putTimerEinstellungV1
       tags:
       - Timer
@@ -862,7 +1173,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/TimerEinstellungV1"
         "400":
-          description: Ungültige Timer-Einstellung
+          description: Ungültige Zeitdauern
           content:
             application/json:
               schema:
@@ -873,6 +1184,228 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    get:
+      summary: Intervalltimer-Einstellung abrufen
+      description: "Liefert die gespeicherte Timer-Einstellung des angemeldeten Benutzers\
+        \ oder den Standard (30 s Training, 10 s Pause, gespeichert=false)."
+      operationId: getTimerEinstellungV1
+      tags:
+      - Timer
+      responses:
+        "200":
+          description: Timer-Einstellung erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimerEinstellungV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/workouts:
+    post:
+      summary: Neues Workout anlegen
+      description: Erstellt ein neues manuelles Kraft- oder Calisthenics-Workout (Standardsichtbarkeit
+        PRIVAT).
+      operationId: erstelleWorkoutV1
+      tags:
+      - Workouts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutErstellenV1"
+        required: true
+      responses:
+        "201":
+          description: Workout erfolgreich erstellt
+          headers:
+            Location:
+              description: Pfad zum neu erstellten Workout
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutV1"
+        "400":
+          description: Ungültige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    get:
+      summary: Eigene Workouts auflisten
+      description: "Liefert alle eigenen Workouts des angemeldeten Benutzers absteigend\
+        \ nach Startzeit, optional gefiltert nach Typ."
+      operationId: listeWorkoutsV1
+      tags:
+      - Workouts
+      parameters:
+      - description: Optionaler Filter nach Workout-Typ (KRAFT oder CALISTHENICS)
+        name: typ
+        in: query
+        schema:
+          $ref: "#/components/schemas/WorkoutTyp"
+      responses:
+        "200":
+          description: Workouts erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/workouts/{id}:
+    delete:
+      summary: Eigenes Workout löschen
+      description: Löscht ein eigenes Workout samt zugehörigen Übungen und Sätzen.
+      operationId: loescheWorkoutV1
+      tags:
+      - Workouts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Workout erfolgreich gelöscht
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    put:
+      summary: Eigenes Workout aktualisieren
+      description: Aktualisiert ein eigenes Workout vollständig unter Prüfung der
+        optimistischen Sperrversion.
+      operationId: aktualisiereWorkoutV1
+      tags:
+      - Workouts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutAktualisierenV1"
+        required: true
+      responses:
+        "200":
+          description: Workout erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutV1"
+        "400":
+          description: Ungültige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Versionskonflikt bei optimistischer Sperre
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    get:
+      summary: Workout-Details abrufen
+      description: Liefert ein einzelnes Workout inkl. aller Übungen und Sätze. Fremde
+        private Workouts liefern 404.
+      operationId: getWorkoutV1
+      tags:
+      - Workouts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Workout erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
       security:
       - SecurityScheme: []
 servers:
