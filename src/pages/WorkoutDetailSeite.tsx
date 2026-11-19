@@ -7,6 +7,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
 import SelfImprovementOutlinedIcon from '@mui/icons-material/SelfImprovementOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -29,6 +30,7 @@ import {
   extrahiereFehlermeldung,
   istFehlerV1,
   istWorkoutV1,
+  type WorkoutEinladungV1,
   type WorkoutErstellenV1,
   type WorkoutV1,
 } from '../api/client';
@@ -44,9 +46,12 @@ import {
   zuWorkoutAktualisierenBody,
 } from '../workouts/formularLogik';
 import { WorkoutFormular } from '../workouts/WorkoutFormular';
+import { WorkoutTeilenBereich } from '../workouts/WorkoutTeilenBereich';
 
 interface DetailNavigationsState {
   hinweis?: string;
+  zurueckPfad?: string;
+  zurueckLabel?: string;
 }
 
 export function WorkoutDetailSeite() {
@@ -55,9 +60,14 @@ export function WorkoutDetailSeite() {
   const navigate = useNavigate();
   const { status, fehlerMeldung: authFehler, apiClient, aktualisiereSitzung } = useAuth();
 
-  const initialHinweis = (location.state as DetailNavigationsState | null)?.hinweis ?? null;
+  const navState = location.state as DetailNavigationsState | null;
+  const initialHinweis = navState?.hinweis ?? null;
+  const zurueckPfad = navState?.zurueckPfad ?? '/workouts';
+  const zurueckLabel = navState?.zurueckLabel ?? 'Zurück zu Workouts';
 
   const [workout, setWorkout] = useState<WorkoutV1 | null>(null);
+  const [istBesitzer, setIstBesitzer] = useState<boolean>(false);
+  const [einladungen, setEinladungen] = useState<WorkoutEinladungV1[]>([]);
   const [laedt, setLaedt] = useState<boolean>(false);
   const [ladeFehler, setLadeFehler] = useState<string | null>(null);
   const [nichtGefunden, setNichtGefunden] = useState<boolean>(false);
@@ -110,6 +120,21 @@ export function WorkoutDetailSeite() {
         setFormularGeneration((n) => n + 1);
         setSpeicherFehler(null);
         setIstVersionsKonflikt(false);
+
+        const einladungenAntwort = await apiClient.GET('/v1/workouts/{id}/einladungen', {
+          params: { path: { id } },
+        });
+        if (einladungenAntwort.response.status === 401) {
+          await aktualisiereSitzung();
+          return;
+        }
+        if (einladungenAntwort.response.ok && Array.isArray(einladungenAntwort.data)) {
+          setIstBesitzer(true);
+          setEinladungen(einladungenAntwort.data);
+        } else {
+          setIstBesitzer(false);
+          setEinladungen([]);
+        }
         return;
       }
 
@@ -269,12 +294,12 @@ export function WorkoutDetailSeite() {
       <Box>
         <Button
           component={RouterLink}
-          to="/workouts"
+          to={zurueckPfad}
           variant="text"
           startIcon={<ArrowBackOutlinedIcon />}
           sx={{ mb: 1, minHeight: 44, px: 1 }}
         >
-          Zurück zu Workouts
+          {zurueckLabel}
         </Button>
       </Box>
 
@@ -394,6 +419,14 @@ export function WorkoutDetailSeite() {
                       }
                       label={formatiereSichtbarkeit(workout.sichtbarkeit)}
                     />
+                    {!istBesitzer ? (
+                      <Chip
+                        variant="outlined"
+                        color="info"
+                        icon={<VisibilityOutlinedIcon />}
+                        label="Schreibgeschützt"
+                      />
+                    ) : null}
                   </Stack>
 
                   <Typography variant="h1" sx={{ wordBreak: 'break-word' }}>
@@ -436,41 +469,60 @@ export function WorkoutDetailSeite() {
                     </Typography>
                   ) : null}
 
-                  <Divider />
+                  {istBesitzer ? (
+                    <>
+                      <Divider />
 
-                  <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={1.5}
-                  >
-                    <Button
-                      variant="contained"
-                      startIcon={<EditOutlinedIcon />}
-                      onClick={() => {
-                        setErfolgsHinweis(null);
-                        setSpeicherFehler(null);
-                        setIstVersionsKonflikt(false);
-                        setBearbeiten(true);
-                      }}
-                      sx={{ minHeight: 48 }}
-                    >
-                      Bearbeiten
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteOutlineOutlinedIcon />}
-                      onClick={() => {
-                        setLoeschFehler(null);
-                        setLoeschDialogOffen(true);
-                      }}
-                      sx={{ minHeight: 48 }}
-                    >
-                      Löschen
-                    </Button>
-                  </Stack>
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.5}
+                      >
+                        <Button
+                          variant="contained"
+                          startIcon={<EditOutlinedIcon />}
+                          onClick={() => {
+                            setErfolgsHinweis(null);
+                            setSpeicherFehler(null);
+                            setIstVersionsKonflikt(false);
+                            setBearbeiten(true);
+                          }}
+                          sx={{ minHeight: 48 }}
+                        >
+                          Bearbeiten
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteOutlineOutlinedIcon />}
+                          onClick={() => {
+                            setLoeschFehler(null);
+                            setLoeschDialogOffen(true);
+                          }}
+                          sx={{ minHeight: 48 }}
+                        >
+                          Löschen
+                        </Button>
+                      </Stack>
+                    </>
+                  ) : null}
                 </Stack>
               </CardContent>
             </Card>
+
+            {istBesitzer ? (
+              <WorkoutTeilenBereich
+                workout={workout}
+                einladungen={einladungen}
+                apiClient={apiClient}
+                onSitzungAbgelaufen={aktualisiereSitzung}
+                onWorkoutAktualisiert={(aktualisiert, hinweis) => {
+                  setWorkout(aktualisiert);
+                  setFormularGeneration((n) => n + 1);
+                  setErfolgsHinweis(hinweis);
+                }}
+                onEinladungenAktualisiert={setEinladungen}
+              />
+            ) : null}
 
             <Stack spacing={2}>
               <Typography variant="h2">
