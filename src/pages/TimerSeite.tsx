@@ -114,7 +114,7 @@ export function TimerSeite() {
               />
             </Stack>
 
-            <Alert severity="info" sx={{ width: '100%', textAlign: 'left', borderRadius: 4 }}>
+            <Alert severity="info" sx={{ width: '100%', textAlign: 'left', borderRadius: '16px' }}>
               Der vollständige Intervalltimer mit Zeitstempel-Genauigkeit, Ton- und Vibrationssignalen
               sowie Server-Abgleich folgt im nächsten Entwicklungsschritt.
             </Alert>

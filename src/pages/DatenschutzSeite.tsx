@@ -22,7 +22,7 @@ export function DatenschutzSeite() {
         </Typography>
       </Box>
 
-      <Alert severity="warning" sx={{ borderRadius: 4 }}>
+      <Alert severity="warning" sx={{ borderRadius: '16px' }}>
         <AlertTitle>Proof of Concept</AlertTitle>
         Proof of Concept – vollständig KI-generiert („vibe-coded“). Keine Gewähr für Sicherheit oder
         Verfügbarkeit. Daten können jederzeit zurückgesetzt werden. Bitte keine sensiblen Angaben
