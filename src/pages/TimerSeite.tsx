@@ -43,6 +43,7 @@ import {
   type TimerZustand,
 } from '../timer/logik';
 import { useIntervallTimer, type IntervallTimerOptionen } from '../timer/useIntervallTimer';
+import { POC_HINWEIS_TEXT } from './DatenschutzSeite';
 
 export interface TimerSeiteProps {
   readonly timerOptionen?: IntervallTimerOptionen;
@@ -586,6 +587,10 @@ export function TimerSeite({ timerOptionen }: TimerSeiteProps = {}) {
           </Stack>
         </CardContent>
       </Card>
+
+      <Alert severity="info" sx={{ borderRadius: '16px' }}>
+        {POC_HINWEIS_TEXT}
+      </Alert>
     </Stack>
   );
 }

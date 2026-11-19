@@ -26,7 +26,7 @@ import type { ReactElement } from 'react';
 import { Link as RouterLink, Navigate, Route, Routes, useLocation } from 'react-router';
 import type { ApiClient } from './api/client';
 import { AuthProvider } from './konto/AuthContext';
-import { DatenschutzSeite } from './pages/DatenschutzSeite';
+import { DatenschutzSeite, POC_HINWEIS_TEXT } from './pages/DatenschutzSeite';
 import { EntdeckenSeite } from './pages/EntdeckenSeite';
 import { KontoSeite } from './pages/KontoSeite';
 import { ProfilSeite } from './pages/ProfilSeite';
@@ -217,8 +217,7 @@ function AppShell() {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Proof of Concept – vollständig KI-generiert („vibe-coded“). Keine Gewähr für
-              Sicherheit oder Verfügbarkeit.
+              {POC_HINWEIS_TEXT}
             </Typography>
             <Link
               component={RouterLink}

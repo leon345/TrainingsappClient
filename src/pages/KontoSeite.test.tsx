@@ -409,4 +409,142 @@ describe('KontoSeite (Passkey-UI & Passkey-Verwaltung)', () => {
       expect(screen.getByText('Der letzte Passkey kann nicht gelöscht werden.')).toBeVisible();
     });
   });
+
+  it('loest den JSON-Datenexport als Datei-Download aus', async () => {
+    const user = userEvent.setup();
+    const createObjectUrlSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test-export');
+    const revokeObjectUrlSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    let heruntergeladenerDateiname = '';
+    const originalCreateElement = document.createElement.bind(document);
+    const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation(((
+      tagName: string,
+      options?: ElementCreationOptions,
+    ) => {
+      const el = originalCreateElement(tagName, options);
+      if (tagName.toLowerCase() === 'a') {
+        const originalClick = el.click.bind(el);
+        el.click = () => {
+          heruntergeladenerDateiname = (el as HTMLAnchorElement).download;
+          originalClick();
+        };
+      }
+      return el;
+    }) as typeof document.createElement);
+
+    try {
+      const mockFetch = vi.fn<typeof fetch>(async (input) => {
+        const request = input instanceof Request ? input : new Request(input);
+        const pfad = new URL(request.url).pathname;
+
+        if (pfad === '/v1/passkeys') {
+          return jsonAntwort([PASSKEY_1]);
+        }
+        if (pfad === '/v1/dsgvo/export') {
+          return jsonAntwort({
+            exportiertAm: '2026-11-19T18:00:00Z',
+            benutzer: TEST_BENUTZER,
+            passkeys: [PASSKEY_1],
+            workouts: [],
+            erhalteneEinladungen: [],
+          });
+        }
+        return new Response(null, { status: 404 });
+      });
+
+      const client = erzeugeApiClient({ baseUrl: 'http://localhost:4173', fetch: mockFetch });
+
+      render(
+        <MemoryRouter>
+          <AuthProvider client={client} initialBenutzer={TEST_BENUTZER} automatischLaden={false}>
+            <KontoSeite />
+          </AuthProvider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Meine Daten exportieren (JSON)' })).toBeVisible();
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Meine Daten exportieren (JSON)' }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/DSGVO-Datenexport wurde als JSON-Datei heruntergeladen/i)).toBeVisible();
+      });
+      expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+      expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:test-export');
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+      expect(heruntergeladenerDateiname).toMatch(/^trainingsapp-datenexport-\d{4}-\d{2}-\d{2}\.json$/);
+    } finally {
+      createElementSpy.mockRestore();
+      clickSpy.mockRestore();
+      createObjectUrlSpy.mockRestore();
+      revokeObjectUrlSpy.mockRestore();
+    }
+  });
+
+  it('fuehrt zweistufige Kontoloeschung durch und bereinigt lokale Sitzung', async () => {
+    const user = userEvent.setup();
+    let deleteAufgerufen = false;
+
+    const mockFetch = vi.fn<typeof fetch>(async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      const pfad = new URL(request.url).pathname;
+
+      if (pfad === '/v1/passkeys') {
+        return jsonAntwort([PASSKEY_1]);
+      }
+      if (pfad === '/v1/konto' && request.method === 'DELETE') {
+        deleteAufgerufen = true;
+        return new Response(null, { status: 204 });
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const client = erzeugeApiClient({ baseUrl: 'http://localhost:4173', fetch: mockFetch });
+
+    render(
+      <MemoryRouter>
+        <AuthProvider client={client} initialBenutzer={TEST_BENUTZER} automatischLaden={false}>
+          <KontoSeite />
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Konto dauerhaft löschen' })).toBeVisible();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Konto dauerhaft löschen' }));
+    const dialog = screen.getByRole('dialog', { name: 'Konto dauerhaft löschen?' });
+    const endgueltigButton = within(dialog).getByRole('button', { name: 'Konto endgültig löschen' });
+
+    // Ohne Bestätigung deaktiviert
+    expect(endgueltigButton).toBeDisabled();
+
+    // Schritt 1: Checkbox
+    await user.click(within(dialog).getByRole('checkbox'));
+    expect(endgueltigButton).toBeDisabled();
+
+    // Schritt 2: falscher Name -> weiterhin deaktiviert
+    const eingabe = within(dialog).getByLabelText(/Benutzernamen zur Bestätigung eingeben/i);
+    await user.type(eingabe, 'falscher.name');
+    expect(endgueltigButton).toBeDisabled();
+
+    // Schritt 2: korrekter Name -> aktiviert
+    await user.clear(eingabe);
+    await user.type(eingabe, 'Max.Muster');
+    expect(endgueltigButton).toBeEnabled();
+
+    await user.click(endgueltigButton);
+
+    await waitFor(() => {
+      expect(deleteAufgerufen).toBe(true);
+      expect(
+        screen.getByText(/Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht/i),
+      ).toBeVisible();
+    });
+    expect(screen.getByRole('button', { name: 'Mit Passkey anmelden' })).toBeVisible();
+  });
 });

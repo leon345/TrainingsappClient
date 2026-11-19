@@ -47,8 +47,10 @@ describe('App-Navigation und Barrierefreiheit', () => {
       screen.getByRole('heading', { level: 1, name: /Datenschutz & PoC-Hinweis/i }),
     ).toBeVisible();
     expect(
-      within(screen.getByRole('main')).getByText(/vollständig KI-generiert/i),
-    ).toBeVisible();
+      within(screen.getByRole('main'))
+        .getAllByText(/vollständig KI-generiert/i)
+        .some((el) => el.closest('[hidden]') === null),
+    ).toBe(true);
 
     await user.click(within(nav).getByRole('link', { name: 'Timer' }));
     expect(timerBereich).not.toHaveAttribute('hidden');

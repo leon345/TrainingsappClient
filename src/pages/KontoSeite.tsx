@@ -1,5 +1,7 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import LoginRoundedIcon from '@mui/icons-material/LoginRounded';
@@ -32,7 +34,7 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import { extrahiereFehlermeldung, type PasskeyV1 } from '../api/client';
 import { formatiereDatum } from '../format/datum';
 import { useAuth } from '../konto/AuthContext';
@@ -47,8 +49,23 @@ import {
   istWebAuthnUnterstuetzt,
   pruefePasskeyCredential,
 } from '../konto/webauthn';
+import { POC_HINWEIS_TEXT } from './DatenschutzSeite';
+
+function loeseJsonDownloadAus(daten: unknown, dateiname: string): void {
+  const inhalt = JSON.stringify(daten, null, 2);
+  const blob = new Blob([inhalt], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = dateiname;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 export function KontoSeite() {
+  const navigate = useNavigate();
   const {
     benutzer,
     status,
@@ -58,6 +75,7 @@ export function KontoSeite() {
     aktualisiereSitzung,
     setzeAngemeldetenBenutzer,
     abmelden,
+    bereinigeSitzungLokal,
   } = useAuth();
 
   const webAuthnUnterstuetzt = istWebAuthnUnterstuetzt();
@@ -88,6 +106,13 @@ export function KontoSeite() {
   const [umbenennenEingabe, setUmbenennenEingabe] = useState('');
   const [umbenennenFehler, setUmbenennenFehler] = useState<string | null>(null);
   const [loeschenZiel, setLoeschenZiel] = useState<PasskeyV1 | null>(null);
+
+  // DSGVO-Export & Kontolöschung
+  const [exportLaeuft, setExportLaeuft] = useState(false);
+  const [kontoLoeschDialogOffen, setKontoLoeschDialogOffen] = useState(false);
+  const [kontoLoeschVerstanden, setKontoLoeschVerstanden] = useState(false);
+  const [kontoLoeschNameEingabe, setKontoLoeschNameEingabe] = useState('');
+  const [kontoLoeschFehler, setKontoLoeschFehler] = useState<string | null>(null);
 
   const ladePasskeys = useCallback(async () => {
     setPasskeysLadend(true);
@@ -453,6 +478,109 @@ export function KontoSeite() {
     }
   };
 
+  const handleDatenExportieren = async () => {
+    setExportLaeuft(true);
+    setFehlerText(null);
+    setErfolgText(null);
+
+    try {
+      const { data, error, response } = await apiClient.GET('/v1/dsgvo/export');
+
+      if (response.status === 401) {
+        await aktualisiereSitzung();
+        return;
+      }
+
+      if (response.ok && data) {
+        const heuteIso = new Date().toISOString().slice(0, 10);
+        loeseJsonDownloadAus(data, `trainingsapp-datenexport-${heuteIso}.json`);
+        setErfolgText('Dein DSGVO-Datenexport wurde als JSON-Datei heruntergeladen.');
+        return;
+      }
+
+      setFehlerText(
+        extrahiereFehlermeldung(error, 'Datenexport konnte nicht erstellt werden.', response),
+      );
+    } catch (ex) {
+      setFehlerText(
+        extrahiereFehlermeldung(
+          ex,
+          'Datenexport konnte wegen eines Netzwerkfehlers nicht erstellt werden.',
+        ),
+      );
+    } finally {
+      setExportLaeuft(false);
+    }
+  };
+
+  const oeffneKontoLoeschDialog = () => {
+    setKontoLoeschVerstanden(false);
+    setKontoLoeschNameEingabe('');
+    setKontoLoeschFehler(null);
+    setKontoLoeschDialogOffen(true);
+  };
+
+  const schliesseKontoLoeschDialog = () => {
+    if (aktionLaeuft) {
+      return;
+    }
+    setKontoLoeschDialogOffen(false);
+    setKontoLoeschVerstanden(false);
+    setKontoLoeschNameEingabe('');
+    setKontoLoeschFehler(null);
+  };
+
+  const istKontoLoeschungBestaetigt =
+    benutzer !== null &&
+    kontoLoeschVerstanden &&
+    normalisiereBenutzername(kontoLoeschNameEingabe) === benutzer.benutzername;
+
+  const handleKontoLoeschen = async () => {
+    if (!istKontoLoeschungBestaetigt) {
+      return;
+    }
+
+    setAktionLaeuft(true);
+    setKontoLoeschFehler(null);
+    setFehlerText(null);
+    setErfolgText(null);
+
+    try {
+      const { error, response } = await apiClient.DELETE('/v1/konto');
+
+      if (response.status === 401) {
+        setKontoLoeschDialogOffen(false);
+        await aktualisiereSitzung();
+        return;
+      }
+
+      if (response.status === 204 || response.ok) {
+        setKontoLoeschDialogOffen(false);
+        setKontoLoeschVerstanden(false);
+        setKontoLoeschNameEingabe('');
+        setPasskeys([]);
+        setPasskeysGeladen(false);
+        bereinigeSitzungLokal();
+        setErfolgText('Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht.');
+        void navigate('/konto', { replace: true });
+        return;
+      }
+
+      setKontoLoeschFehler(
+        extrahiereFehlermeldung(error, 'Konto konnte nicht gelöscht werden.', response),
+      );
+    } catch (ex) {
+      setKontoLoeschFehler(
+        extrahiereFehlermeldung(
+          ex,
+          'Konto konnte wegen eines Netzwerkfehlers nicht gelöscht werden.',
+        ),
+      );
+    } finally {
+      setAktionLaeuft(false);
+    }
+  };
+
   const istLetzterPasskey = passkeys.length <= 1;
 
   return (
@@ -710,6 +838,114 @@ export function KontoSeite() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <Stack spacing={2.5}>
+                <Box>
+                  <Typography variant="h3" component="h2" gutterBottom>
+                    Datenschutz &amp; deine Daten
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Lade jederzeit einen vollständigen JSON-Export aller zu deinem Konto
+                    gespeicherten Daten herunter oder lösche dein Konto dauerhaft.
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DownloadOutlinedIcon />}
+                    onClick={() => void handleDatenExportieren()}
+                    disabled={exportLaeuft || aktionLaeuft}
+                    sx={{ minHeight: 48 }}
+                  >
+                    {exportLaeuft ? 'Export wird erstellt …' : 'Meine Daten exportieren (JSON)'}
+                  </Button>
+                </Box>
+
+                <Divider />
+
+                <Stack spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="subtitle1" color="error" sx={{ fontWeight: 700 }}>
+                      Konto dauerhaft löschen
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Löscht dein Profil, alle Passkeys, Timer-Einstellungen, Workouts, Übungen,
+                      Sätze und Einladungen sofort und unwiderruflich.
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteForeverOutlinedIcon />}
+                    onClick={oeffneKontoLoeschDialog}
+                    disabled={aktionLaeuft || exportLaeuft}
+                    sx={{ minHeight: 48 }}
+                  >
+                    Konto dauerhaft löschen
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          <Dialog
+            open={kontoLoeschDialogOffen}
+            onClose={schliesseKontoLoeschDialog}
+            fullWidth
+            maxWidth="xs"
+          >
+            <DialogTitle>Konto dauerhaft löschen?</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} sx={{ pt: 0.5 }}>
+                <DialogContentText>
+                  Diese Aktion kann nicht rückgängig gemacht werden. Dein Konto „
+                  <strong>{benutzer.benutzername}</strong>“, alle Passkeys, Timer-Einstellungen,
+                  Workouts und Einladungen werden sofort und vollständig gelöscht.
+                </DialogContentText>
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={kontoLoeschVerstanden}
+                      onChange={(_, gecheckt) => setKontoLoeschVerstanden(gecheckt)}
+                      disabled={aktionLaeuft}
+                    />
+                  }
+                  label="Ich verstehe, dass mein Konto und alle gespeicherten Daten unwiderruflich gelöscht werden."
+                />
+
+                <TextField
+                  id="konto-loeschen-bestaetigung"
+                  label="Benutzernamen zur Bestätigung eingeben"
+                  fullWidth
+                  placeholder={benutzer.benutzername}
+                  value={kontoLoeschNameEingabe}
+                  onChange={(e) => setKontoLoeschNameEingabe(e.target.value)}
+                  helperText={`Bitte gib „${benutzer.benutzername}“ exakt ein.`}
+                  disabled={aktionLaeuft}
+                />
+
+                {kontoLoeschFehler ? <Alert severity="error">{kontoLoeschFehler}</Alert> : null}
+              </Stack>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2.5 }}>
+              <Button onClick={schliesseKontoLoeschDialog} disabled={aktionLaeuft} sx={{ minHeight: 44 }}>
+                Abbrechen
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                disabled={!istKontoLoeschungBestaetigt || aktionLaeuft}
+                onClick={() => void handleKontoLoeschen()}
+                sx={{ minHeight: 44 }}
+              >
+                {aktionLaeuft ? 'Löscht …' : 'Konto endgültig löschen'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
           <Dialog
             open={umbenennenZiel !== null}
             onClose={() => {
@@ -877,10 +1113,8 @@ export function KontoSeite() {
                     </Typography>
                   </Stack>
 
-                  <Alert severity="info">
-                    Proof of Concept (vollständig KI-generiert, keine Gewähr für Sicherheit oder
-                    Verfügbarkeit). Bitte wähle ein Pseudonym – keine E-Mail-Adresse und keinen
-                    Klarnamen.
+                  <Alert severity="warning">
+                    {POC_HINWEIS_TEXT}
                   </Alert>
 
                   <TextField
