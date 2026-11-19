@@ -24,6 +24,8 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import type { ReactElement } from 'react';
 import { Link as RouterLink, Navigate, Route, Routes, useLocation } from 'react-router';
+import type { ApiClient } from './api/client';
+import { AuthProvider } from './konto/AuthContext';
 import { DatenschutzSeite } from './pages/DatenschutzSeite';
 import { EntdeckenSeite } from './pages/EntdeckenSeite';
 import { KontoSeite } from './pages/KontoSeite';
@@ -248,11 +250,18 @@ function AppShell() {
   );
 }
 
-export function App() {
+export interface AppProps {
+  readonly apiClient?: ApiClient;
+  readonly authAutomatischLaden?: boolean;
+}
+
+export function App({ apiClient, authAutomatischLaden = true }: AppProps = {}) {
   return (
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
-      <AppShell />
+      <AuthProvider client={apiClient} automatischLaden={authAutomatischLaden}>
+        <AppShell />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

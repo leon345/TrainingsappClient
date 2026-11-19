@@ -24,6 +24,7 @@ export interface IntervallTimerOptionen {
   readonly uhr?: () => number;
   readonly phasenSignal?: PhasenSignal;
   readonly taktIntervallMs?: number;
+  readonly beiEinstellungGeaendert?: (einstellung: TimerEinstellung) => void;
 }
 
 export interface IntervallTimerSteuerung {
@@ -35,6 +36,7 @@ export interface IntervallTimerSteuerung {
   readonly fortsetzen: () => void;
   readonly zuruecksetzen: () => void;
   readonly einstellungAendern: (eingabe: Partial<TimerEinstellung>) => void;
+  readonly uebernehmeExterneEinstellung: (einstellung: TimerEinstellung) => void;
   readonly setzeTonAktiv: (aktiv: boolean) => void;
   readonly setzeVibrationAktiv: (aktiv: boolean) => void;
 }
@@ -48,6 +50,11 @@ export function useIntervallTimer(
   const uhr = optionen.uhr ?? standardUhr;
   const externesSignal = optionen.phasenSignal;
   const taktIntervallMs = optionen.taktIntervallMs ?? STANDARD_TAKT_INTERVALL_MS;
+  const beiEinstellungGeaendertRef = useRef(optionen.beiEinstellungGeaendert);
+
+  useEffect(() => {
+    beiEinstellungGeaendertRef.current = optionen.beiEinstellungGeaendert;
+  }, [optionen.beiEinstellungGeaendert]);
 
   const [vibrationUnterstuetzt] = useState<boolean>(() => istVibrationUnterstuetzt());
 
@@ -162,7 +169,27 @@ export function useIntervallTimer(
 
   const einstellungAendern = useCallback(
     (eingabe: Partial<TimerEinstellung>) => {
+      const vorher = zustandRef.current.einstellung;
       const naechster = aendereTimerEinstellung(zustandRef.current, eingabe);
+      zustandRef.current = naechster;
+      setZustand(naechster);
+      speicher.speichereEinstellung(naechster.einstellung);
+      if (naechster.phase !== 'bereit') {
+        speicher.speichereLaufzustand(naechster);
+      }
+      if (
+        naechster.einstellung.trainingSekunden !== vorher.trainingSekunden ||
+        naechster.einstellung.pauseSekunden !== vorher.pauseSekunden
+      ) {
+        beiEinstellungGeaendertRef.current?.(naechster.einstellung);
+      }
+    },
+    [speicher],
+  );
+
+  const uebernehmeExterneEinstellung = useCallback(
+    (einstellung: TimerEinstellung) => {
+      const naechster = aendereTimerEinstellung(zustandRef.current, einstellung);
       zustandRef.current = naechster;
       setZustand(naechster);
       speicher.speichereEinstellung(naechster.einstellung);
@@ -205,6 +232,7 @@ export function useIntervallTimer(
     fortsetzen,
     zuruecksetzen,
     einstellungAendern,
+    uebernehmeExterneEinstellung,
     setzeTonAktiv,
     setzeVibrationAktiv,
   };

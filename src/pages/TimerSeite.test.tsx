@@ -1,11 +1,21 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { erzeugeApiClient, type BenutzerV1 } from '../api/client';
 import { App } from '../App';
+import { AuthProvider } from '../konto/AuthContext';
 import type { PhasenSignal } from '../timer/phasenSignal';
 import { erstelleLokalenTimerSpeicher } from '../timer/speicher';
 import { TimerSeite } from './TimerSeite';
+
+const SYNC_BENUTZER: BenutzerV1 = {
+  id: '22222222-2222-2222-2222-222222222222',
+  benutzername: 'timer.tester',
+  rolle: 'USER',
+  erstelltAm: '2026-11-19T12:00:00Z',
+  einwilligungAm: '2026-11-19T12:00:00Z',
+};
 
 function erstelleMemoryStorage(): Storage {
   const map = new Map<string, string>();
@@ -207,5 +217,136 @@ describe('TimerSeite (Komponente & Verhalten)', () => {
     fireEvent.click(within(nav).getByRole('link', { name: 'Timer' }));
     expect(screen.getByRole('timer')).toHaveTextContent('00:20');
     expect(screen.getByRole('status')).toHaveTextContent('Training – Runde 1');
+  });
+
+  it('uebernimmt gespeicherte Server-Einstellung bei Login (gespeichert=true) und synchronisiert Aenderungen per PUT', async () => {
+    const user = userEvent.setup();
+    const raw = erstelleMemoryStorage();
+    const speicher = erstelleLokalenTimerSpeicher(() => raw);
+    const putBodies: unknown[] = [];
+
+    const mockFetch = vi.fn<typeof fetch>(async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      if (request.method === 'GET' && request.url.endsWith('/v1/timer/einstellung')) {
+        return new Response(
+          JSON.stringify({ trainingSekunden: 45, pauseSekunden: 15, gespeichert: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (request.method === 'PUT' && request.url.endsWith('/v1/timer/einstellung')) {
+        const body = (await request.clone().json()) as {
+          trainingSekunden: number;
+          pauseSekunden: number;
+        };
+        putBodies.push(body);
+        return new Response(JSON.stringify({ ...body, gespeichert: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const client = erzeugeApiClient({ baseUrl: 'http://localhost:4173', fetch: mockFetch });
+
+    render(
+      <AuthProvider client={client} initialBenutzer={SYNC_BENUTZER} automatischLaden={false}>
+        <TimerSeite timerOptionen={{ speicher }} />
+      </AuthProvider>,
+    );
+
+    // Server-Werte (45/15) werden in Anzeige, Eingabefelder und lokalen Speicher übernommen
+    await waitFor(() => {
+      expect(screen.getByRole('timer')).toHaveTextContent('00:45');
+    });
+    expect(screen.getByLabelText('Training (Sekunden)')).toHaveValue(45);
+    expect(screen.getByLabelText('Pause (Sekunden)')).toHaveValue(15);
+    expect(speicher.ladeEinstellung()).toEqual({ trainingSekunden: 45, pauseSekunden: 15 });
+    expect(putBodies).toHaveLength(0);
+
+    // Änderung durch Nutzer speichert lokal und sendet PUT /v1/timer/einstellung
+    const pauseFeld = screen.getByLabelText('Pause (Sekunden)');
+    await user.clear(pauseFeld);
+    await user.type(pauseFeld, '20');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(putBodies.at(-1)).toEqual({ trainingSekunden: 45, pauseSekunden: 20 });
+    });
+    expect(speicher.ladeEinstellung()).toEqual({ trainingSekunden: 45, pauseSekunden: 20 });
+  });
+
+  it('behaelt lokale Timer-Werte bei gespeichert=false und zeigt bei Offline-PUT einen dezenten Hinweis', async () => {
+    const user = userEvent.setup();
+    const raw = erstelleMemoryStorage();
+    const speicher = erstelleLokalenTimerSpeicher(() => raw);
+    speicher.speichereEinstellung({ trainingSekunden: 50, pauseSekunden: 12 });
+
+    const mockFetch = vi.fn<typeof fetch>(async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      if (request.method === 'GET' && request.url.endsWith('/v1/timer/einstellung')) {
+        return new Response(
+          JSON.stringify({ trainingSekunden: 30, pauseSekunden: 10, gespeichert: false }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (request.method === 'PUT' && request.url.endsWith('/v1/timer/einstellung')) {
+        throw new TypeError('Failed to fetch');
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const client = erzeugeApiClient({ baseUrl: 'http://localhost:4173', fetch: mockFetch });
+
+    render(
+      <AuthProvider client={client} initialBenutzer={SYNC_BENUTZER} automatischLaden={false}>
+        <TimerSeite timerOptionen={{ speicher }} />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+    // Lokale Werte (50/12) bleiben bei gespeichert=false unangetastet
+    expect(screen.getByRole('timer')).toHaveTextContent('00:50');
+    expect(screen.getByLabelText('Training (Sekunden)')).toHaveValue(50);
+    expect(screen.getByLabelText('Pause (Sekunden)')).toHaveValue(12);
+
+    // Offline-PUT: lokal sofort gespeichert + dezenter Hinweis, Timer bleibt lokal voll nutzbar
+    const trainingFeld = screen.getByLabelText('Training (Sekunden)');
+    await user.clear(trainingFeld);
+    await user.type(trainingFeld, '60');
+    await user.tab();
+
+    expect(speicher.ladeEinstellung()).toEqual({ trainingSekunden: 60, pauseSekunden: 12 });
+    await waitFor(() => {
+      expect(screen.getByText(/lokal gespeichert.*nicht mit dem Server synchronisiert/i)).toBeVisible();
+    });
+
+    // Timer startet trotz Offline-Fehler normal
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Training – Runde 1');
+  });
+
+  it('sendet keine Timer-Sync-Anfragen, wenn kein Benutzer angemeldet ist', async () => {
+    const user = userEvent.setup();
+    const raw = erstelleMemoryStorage();
+    const speicher = erstelleLokalenTimerSpeicher(() => raw);
+    const mockFetch = vi.fn<typeof fetch>();
+    const client = erzeugeApiClient({ baseUrl: 'http://localhost:4173', fetch: mockFetch });
+
+    render(
+      <AuthProvider client={client} initialStatus="abgemeldet" automatischLaden={false}>
+        <TimerSeite timerOptionen={{ speicher }} />
+      </AuthProvider>,
+    );
+
+    const trainingFeld = screen.getByLabelText('Training (Sekunden)');
+    await user.clear(trainingFeld);
+    await user.type(trainingFeld, '40');
+    await user.tab();
+
+    expect(speicher.ladeEinstellung()).toEqual({ trainingSekunden: 40, pauseSekunden: 10 });
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

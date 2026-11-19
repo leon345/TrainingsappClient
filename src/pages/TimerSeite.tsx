@@ -6,6 +6,7 @@ import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import VibrationOutlinedIcon from '@mui/icons-material/VibrationOutlined';
 import VolumeUpOutlinedIcon from '@mui/icons-material/VolumeUpOutlined';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -18,8 +19,17 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from 'react';
+import { istTimerEinstellungV1 } from '../api/client';
 import { dauerAlsWorte, formatiereDauer } from '../format/dauer';
+import { useAuth } from '../konto/AuthContext';
 import {
   berechneFortschrittProzent,
   bereinigeEinstellung,
@@ -29,6 +39,7 @@ import {
   MIN_PAUSE_SEKUNDEN,
   MIN_TRAINING_SEKUNDEN,
   restSekundenAnzeige,
+  type TimerEinstellung,
   type TimerZustand,
 } from '../timer/logik';
 import { useIntervallTimer, type IntervallTimerOptionen } from '../timer/useIntervallTimer';
@@ -82,6 +93,47 @@ function phasenDarstellung(zustand: TimerZustand) {
 }
 
 export function TimerSeite({ timerOptionen }: TimerSeiteProps = {}) {
+  const { benutzer, status: authStatus, apiClient } = useAuth();
+  const [syncHinweis, setSyncHinweis] = useState<string | null>(null);
+  const putZaehlerRef = useRef<number>(0);
+
+  const synchronisiereEinstellungZumServer = useCallback(
+    (einstellung: TimerEinstellung) => {
+      if (authStatus !== 'angemeldet' || !benutzer) {
+        return;
+      }
+      const anfrageId = ++putZaehlerRef.current;
+      void (async () => {
+        try {
+          const { response } = await apiClient.PUT('/v1/timer/einstellung', {
+            body: {
+              trainingSekunden: einstellung.trainingSekunden,
+              pauseSekunden: einstellung.pauseSekunden,
+            },
+          });
+          if (anfrageId !== putZaehlerRef.current) {
+            return;
+          }
+          if (response.ok) {
+            setSyncHinweis(null);
+          } else if (response.status !== 401) {
+            setSyncHinweis(
+              'Timer-Einstellung wurde lokal gespeichert, konnte aber nicht mit dem Server synchronisiert werden.',
+            );
+          }
+        } catch {
+          if (anfrageId !== putZaehlerRef.current) {
+            return;
+          }
+          setSyncHinweis(
+            'Timer-Einstellung wurde lokal gespeichert, konnte aber offline nicht mit dem Server synchronisiert werden.',
+          );
+        }
+      })();
+    },
+    [authStatus, benutzer, apiClient],
+  );
+
   const {
     zustand,
     signale,
@@ -91,9 +143,16 @@ export function TimerSeite({ timerOptionen }: TimerSeiteProps = {}) {
     fortsetzen,
     zuruecksetzen,
     einstellungAendern,
+    uebernehmeExterneEinstellung,
     setzeTonAktiv,
     setzeVibrationAktiv,
-  } = useIntervallTimer(timerOptionen);
+  } = useIntervallTimer({
+    ...timerOptionen,
+    beiEinstellungGeaendert: (einstellung) => {
+      timerOptionen?.beiEinstellungGeaendert?.(einstellung);
+      synchronisiereEinstellungZumServer(einstellung);
+    },
+  });
 
   const [trainingEingabe, setTrainingEingabe] = useState<string>(() =>
     String(zustand.einstellung.trainingSekunden),
@@ -101,6 +160,54 @@ export function TimerSeite({ timerOptionen }: TimerSeiteProps = {}) {
   const [pauseEingabe, setPauseEingabe] = useState<string>(() =>
     String(zustand.einstellung.pauseSekunden),
   );
+
+  const angemeldeteBenutzerId = authStatus === 'angemeldet' && benutzer ? benutzer.id : null;
+
+  useEffect(() => {
+    if (!angemeldeteBenutzerId) {
+      return;
+    }
+
+    let aktiv = true;
+    const ladeVomServer = async () => {
+      try {
+        const { data, response } = await apiClient.GET('/v1/timer/einstellung');
+        if (!aktiv) {
+          return;
+        }
+        if (response.ok && istTimerEinstellungV1(data)) {
+          setSyncHinweis(null);
+          if (data.gespeichert) {
+            const bereinigt = bereinigeEinstellung({
+              trainingSekunden: data.trainingSekunden,
+              pauseSekunden: data.pauseSekunden,
+            });
+            uebernehmeExterneEinstellung(bereinigt);
+            setTrainingEingabe(String(bereinigt.trainingSekunden));
+            setPauseEingabe(String(bereinigt.pauseSekunden));
+          }
+          return;
+        }
+        if (response.status !== 401) {
+          setSyncHinweis(
+            'Gespeicherte Timer-Einstellung konnte nicht vom Server geladen werden. Lokale Werte bleiben aktiv.',
+          );
+        }
+      } catch {
+        if (!aktiv) {
+          return;
+        }
+        setSyncHinweis(
+          'Timer-Einstellung konnte offline nicht vom Server geladen werden. Lokale Werte bleiben aktiv.',
+        );
+      }
+    };
+
+    void ladeVomServer();
+    return () => {
+      aktiv = false;
+    };
+  }, [angemeldeteBenutzerId, apiClient, uebernehmeExterneEinstellung]);
 
   const restSekunden = restSekundenAnzeige(zustand);
   const zeitText = formatiereDauer(restSekunden);
@@ -359,6 +466,12 @@ export function TimerSeite({ timerOptionen }: TimerSeiteProps = {}) {
                 Trainingsrunde.
               </Typography>
             </Box>
+
+            {angemeldeteBenutzerId && syncHinweis ? (
+              <Alert severity="warning" onClose={() => setSyncHinweis(null)}>
+                {syncHinweis}
+              </Alert>
+            ) : null}
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
