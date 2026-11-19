@@ -24,4 +24,27 @@ test.describe('Visuelle Regression (nur Chromium – Nutzerentscheid C)', () => 
       });
     });
   }
+
+  test('Snapshot: timer-laufend-mobil-hell', async ({ page }) => {
+    const startZeit = new Date('2026-11-19T12:00:00Z').getTime();
+    const basisZeit = startZeit + 60_000;
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+    await page.clock.install({ time: startZeit });
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1, name: 'Intervalltimer' })).toBeVisible();
+    await page.clock.pauseAt(basisZeit);
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.clock.runFor(10_000);
+    await expect(page.getByRole('timer')).toHaveText('00:20');
+
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('timer-laufend-mobil-hell.png', {
+      animations: 'disabled',
+    });
+  });
 });

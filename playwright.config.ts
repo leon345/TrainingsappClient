@@ -19,22 +19,22 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testMatch: /app\.spec\.ts/,
+      testIgnore: /visuell\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
-      testMatch: /app\.spec\.ts/,
+      testIgnore: /visuell\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
-      testMatch: /app\.spec\.ts/,
+      testIgnore: /visuell\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     },
     {
       name: 'mobile',
-      testMatch: /app\.spec\.ts/,
+      testIgnore: /visuell\.spec\.ts/,
       use: {
         ...devices['Pixel 7'],
         viewport: { width: 390, height: 844 },
