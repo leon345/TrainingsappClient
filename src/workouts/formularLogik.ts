@@ -287,11 +287,10 @@ export function workoutZuFormularZustand(workout: WorkoutV1): WorkoutFormularZus
           (satz, sIndex): SatzFormularEintrag => ({
             clientId: erzeugeClientId('satz'),
             position: sIndex,
-            wiederholungen:
-              satz.wiederholungen !== undefined ? String(satz.wiederholungen) : '',
-            dauerSekunden: satz.dauerSekunden !== undefined ? String(satz.dauerSekunden) : '',
-            gewichtKg: satz.gewichtKg !== undefined ? String(satz.gewichtKg) : '',
-            pauseSekunden: satz.pauseSekunden !== undefined ? String(satz.pauseSekunden) : '',
+            wiederholungen: satz.wiederholungen != null ? String(satz.wiederholungen) : '',
+            dauerSekunden: satz.dauerSekunden != null ? String(satz.dauerSekunden) : '',
+            gewichtKg: satz.gewichtKg != null ? String(satz.gewichtKg) : '',
+            pauseSekunden: satz.pauseSekunden != null ? String(satz.pauseSekunden) : '',
           }),
         );
 
@@ -308,7 +307,7 @@ export function workoutZuFormularZustand(workout: WorkoutV1): WorkoutFormularZus
     typ: workout.typ,
     titel: workout.titel,
     startZeitLokal: utcIsoZuLokalEingabe(workout.startZeit),
-    dauerSekunden: workout.dauerSekunden !== undefined ? String(workout.dauerSekunden) : '',
+    dauerSekunden: workout.dauerSekunden != null ? String(workout.dauerSekunden) : '',
     notiz: workout.notiz ?? '',
     sichtbarkeit: workout.sichtbarkeit,
     uebungen: sortierteUebungen,

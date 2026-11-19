@@ -295,7 +295,7 @@ export function WorkoutsSeite() {
                               </Typography>
                             </Stack>
 
-                            {workout.dauerSekunden !== undefined ? (
+                            {workout.dauerSekunden != null ? (
                               <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                                 <ScheduleOutlinedIcon sx={{ fontSize: 16 }} />
                                 <Typography

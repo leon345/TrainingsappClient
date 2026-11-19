@@ -110,7 +110,7 @@ test.describe('Fullstack-Integration gegen laufenden Quarkus-Server (Chromium CD
       // 8) Workout-Tracking-Flow (Calisthenics anlegen, Reload pruefen, bearbeiten, loeschen)
       await nav.getByRole('link', { name: 'Workouts' }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Workouts' })).toBeVisible();
-      await page.getByRole('link', { name: 'Neues Workout' }).click();
+      await page.getByRole('link', { name: 'Neues Workout', exact: true }).click();
       await expect(page.getByRole('heading', { level: 1, name: 'Neues Workout' })).toBeVisible();
 
       await page.getByRole('button', { name: 'Calisthenics' }).click();
@@ -228,7 +228,7 @@ test.describe('Fullstack-Integration gegen laufenden Quarkus-Server (Chromium CD
       // 2) Nutzer A legt privates Workout an und laedt Nutzer B ein
       const navA = seiteA.getByRole('navigation', { name: 'Hauptnavigation' });
       await navA.getByRole('link', { name: 'Workouts' }).click();
-      await seiteA.getByRole('link', { name: 'Neues Workout' }).click();
+      await seiteA.getByRole('link', { name: 'Neues Workout', exact: true }).click();
       await seiteA.getByLabel(/^Titel/i).fill('Privates Einladungs-Workout');
       await seiteA.getByRole('button', { name: 'Workout speichern' }).click();
       await expect(
@@ -246,7 +246,7 @@ test.describe('Fullstack-Integration gegen laufenden Quarkus-Server (Chromium CD
 
       // 3) Nutzer A legt zweites Workout an und schaltet Sichtbarkeit auf OEFFENTLICH
       await navA.getByRole('link', { name: 'Workouts' }).click();
-      await seiteA.getByRole('link', { name: 'Neues Workout' }).click();
+      await seiteA.getByRole('link', { name: 'Neues Workout', exact: true }).click();
       await seiteA.getByLabel(/^Titel/i).fill('Oeffentliches Profil-Workout');
       await seiteA.getByRole('button', { name: 'Workout speichern' }).click();
       await expect(

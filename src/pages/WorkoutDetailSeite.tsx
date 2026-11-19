@@ -450,7 +450,7 @@ export function WorkoutDetailSeite() {
                       </Typography>
                     </Stack>
 
-                    {workout.dauerSekunden !== undefined ? (
+                    {workout.dauerSekunden != null ? (
                       <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                         <ScheduleOutlinedIcon fontSize="small" />
                         <Typography
@@ -580,14 +580,14 @@ export function WorkoutDetailSeite() {
                                     Satz {sIndex + 1}
                                   </Typography>
 
-                                  {satz.wiederholungen !== undefined ? (
+                                  {satz.wiederholungen != null ? (
                                     <Chip
                                       size="small"
                                       label={`${satz.wiederholungen} Wdh.`}
                                     />
                                   ) : null}
 
-                                  {satz.dauerSekunden !== undefined ? (
+                                  {satz.dauerSekunden != null ? (
                                     <Chip
                                       size="small"
                                       label={formatiereDauer(satz.dauerSekunden)}
@@ -595,7 +595,7 @@ export function WorkoutDetailSeite() {
                                     />
                                   ) : null}
 
-                                  {satz.gewichtKg !== undefined ? (
+                                  {satz.gewichtKg != null ? (
                                     <Chip
                                       size="small"
                                       variant="outlined"
@@ -603,7 +603,7 @@ export function WorkoutDetailSeite() {
                                     />
                                   ) : null}
 
-                                  {satz.pauseSekunden !== undefined ? (
+                                  {satz.pauseSekunden != null ? (
                                     <Typography
                                       variant="body2"
                                       color="text.secondary"
