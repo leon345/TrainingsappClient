@@ -171,4 +171,151 @@ test.describe('Fullstack-Integration gegen laufenden Quarkus-Server (Chromium CD
       });
     }
   });
+
+  test('2-Nutzer-Flow: Sichtbarkeit, Einladung, Entdecken/Profil, DSGVO-Export und Kontoloeschung', async ({
+    browser,
+  }) => {
+    const suffix = Date.now().toString(36);
+    const nutzerA = `e2e.a.${suffix}`;
+    const nutzerB = `e2e.b.${suffix}`;
+
+    const kontextA = await browser.newContext();
+    const kontextB = await browser.newContext();
+    const seiteA = await kontextA.newPage();
+    const seiteB = await kontextB.newPage();
+
+    const cdpA = await kontextA.newCDPSession(seiteA);
+    const cdpB = await kontextB.newCDPSession(seiteB);
+    await cdpA.send('WebAuthn.enable');
+    await cdpB.send('WebAuthn.enable');
+
+    const authA = await cdpA.send('WebAuthn.addVirtualAuthenticator', {
+      options: {
+        protocol: 'ctap2',
+        transport: 'internal',
+        hasResidentKey: true,
+        hasUserVerification: true,
+        isUserVerified: true,
+        automaticPresenceSimulation: true,
+      },
+    });
+    const authB = await cdpB.send('WebAuthn.addVirtualAuthenticator', {
+      options: {
+        protocol: 'ctap2',
+        transport: 'internal',
+        hasResidentKey: true,
+        hasUserVerification: true,
+        isUserVerified: true,
+        automaticPresenceSimulation: true,
+      },
+    });
+
+    try {
+      // 1) Nutzer A und Nutzer B registrieren
+      for (const [seite, name] of [
+        [seiteA, nutzerA],
+        [seiteB, nutzerB],
+      ] as const) {
+        await seite.goto('/konto');
+        await seite.locator('#registrieren-benutzername').fill(name);
+        await seite.getByRole('checkbox', { name: /Ich willige ausdrücklich/i }).check();
+        await seite.getByRole('button', { name: 'Mit Passkey registrieren' }).click();
+        await expect(seite.getByRole('heading', { level: 2, name })).toBeVisible({
+          timeout: 15_000,
+        });
+      }
+
+      // 2) Nutzer A legt privates Workout an und laedt Nutzer B ein
+      const navA = seiteA.getByRole('navigation', { name: 'Hauptnavigation' });
+      await navA.getByRole('link', { name: 'Workouts' }).click();
+      await seiteA.getByRole('link', { name: 'Neues Workout' }).click();
+      await seiteA.getByLabel(/^Titel/i).fill('Privates Einladungs-Workout');
+      await seiteA.getByRole('button', { name: 'Workout speichern' }).click();
+      await expect(
+        seiteA.getByRole('heading', { level: 1, name: 'Privates Einladungs-Workout' }),
+      ).toBeVisible({ timeout: 15_000 });
+
+      await seiteA.getByRole('button', { name: 'Benutzer einladen' }).click();
+      const einladenDialog = seiteA.getByRole('dialog', { name: 'Benutzer einladen' });
+      await einladenDialog.getByLabel(/Benutzername \(exakt\)/i).fill(nutzerB);
+      await einladenDialog.getByRole('button', { name: 'Suchen' }).click();
+      await expect(einladenDialog.getByText(nutzerB, { exact: true })).toBeVisible();
+      await einladenDialog.getByRole('button', { name: 'Einladen' }).click();
+      await expect(einladenDialog).toBeHidden();
+      await expect(seiteA.getByText(nutzerB, { exact: true })).toBeVisible();
+
+      // 3) Nutzer A legt zweites Workout an und schaltet Sichtbarkeit auf OEFFENTLICH
+      await navA.getByRole('link', { name: 'Workouts' }).click();
+      await seiteA.getByRole('link', { name: 'Neues Workout' }).click();
+      await seiteA.getByLabel(/^Titel/i).fill('Oeffentliches Profil-Workout');
+      await seiteA.getByRole('button', { name: 'Workout speichern' }).click();
+      await expect(
+        seiteA.getByRole('heading', { level: 1, name: 'Oeffentliches Profil-Workout' }),
+      ).toBeVisible({ timeout: 15_000 });
+
+      await seiteA.getByRole('button', { name: 'Öffentlich' }).click();
+      await expect(
+        seiteA.getByText(/Sichtbarkeit wurde auf „Öffentlich“ geändert/i),
+      ).toBeVisible();
+
+      // 4) Nutzer B sieht geteiltes Workout unter /entdecken (schreibgeschuetzt) & oeffentliches Profil
+      const navB = seiteB.getByRole('navigation', { name: 'Hauptnavigation' });
+      await navB.getByRole('link', { name: 'Entdecken' }).click();
+      await expect(seiteB.getByText('Privates Einladungs-Workout')).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(seiteB.getByText(`Von ${nutzerA}`)).toBeVisible();
+
+      await seiteB.getByRole('link', { name: /Privates Einladungs-Workout/i }).click();
+      await expect(
+        seiteB.getByRole('heading', { level: 1, name: 'Privates Einladungs-Workout' }),
+      ).toBeVisible();
+      await expect(seiteB.getByText('Schreibgeschützt')).toBeVisible();
+      await expect(seiteB.getByRole('button', { name: 'Bearbeiten' })).toBeHidden();
+
+      await seiteB.getByRole('link', { name: 'Zurück zu Entdecken' }).click();
+      await seiteB.getByLabel(/Benutzername \(exakt\)/i).fill(nutzerA);
+      await seiteB.getByRole('button', { name: 'Profil suchen' }).click();
+      await seiteB.getByRole('link', { name: 'Öffentliches Profil ansehen' }).click();
+
+      await expect(seiteB.getByRole('heading', { level: 1, name: `Profil: ${nutzerA}` })).toBeVisible();
+      await expect(seiteB.getByText('Oeffentliches Profil-Workout')).toBeVisible();
+      await expect(seiteB.getByText('Privates Einladungs-Workout')).toBeHidden();
+
+      // 5) Nutzer A exportiert DSGVO-Daten als JSON und loescht das Konto zweistufig
+      await navA.getByRole('link', { name: 'Konto' }).click();
+      const downloadPromise = seiteA.waitForEvent('download');
+      await seiteA.getByRole('button', { name: 'Meine Daten exportieren (JSON)' }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toMatch(
+        /^trainingsapp-datenexport-\d{4}-\d{2}-\d{2}\.json$/,
+      );
+
+      for (const [seite, name] of [
+        [seiteA, nutzerA],
+        [seiteB, nutzerB],
+      ] as const) {
+        const nav = seite.getByRole('navigation', { name: 'Hauptnavigation' });
+        await nav.getByRole('link', { name: 'Konto' }).click();
+        await seite.getByRole('button', { name: 'Konto dauerhaft löschen' }).click();
+        const dialog = seite.getByRole('dialog', { name: 'Konto dauerhaft löschen?' });
+        await dialog.getByRole('checkbox').check();
+        await dialog.getByLabel(/Benutzernamen zur Bestätigung eingeben/i).fill(name);
+        await dialog.getByRole('button', { name: 'Konto endgültig löschen' }).click();
+        await expect(dialog).toBeHidden();
+        await expect(
+          seite.getByText(/Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht/i),
+        ).toBeVisible();
+      }
+    } finally {
+      await cdpA.send('WebAuthn.removeVirtualAuthenticator', {
+        authenticatorId: authA.authenticatorId,
+      });
+      await cdpB.send('WebAuthn.removeVirtualAuthenticator', {
+        authenticatorId: authB.authenticatorId,
+      });
+      await kontextA.close();
+      await kontextB.close();
+    }
+  });
 });

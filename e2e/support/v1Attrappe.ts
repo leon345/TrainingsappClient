@@ -47,11 +47,31 @@ export interface MockWorkout {
   dauerSekunden?: number;
   notiz?: string;
   sichtbarkeit: 'PRIVAT' | 'OEFFENTLICH';
-  herkunft: 'MANUELL' | 'IMPORT';
+  herkunft: 'MANUELL' | 'APPLE_HEALTH';
   erstelltAm: string;
   geaendertAm: string;
   version: number;
   uebungen: MockUebung[];
+}
+
+export interface MockEinladung {
+  id: string;
+  workoutId: string;
+  eingeladenerId: string;
+  eingeladenerBenutzername: string;
+  status: 'AKTIV';
+  erstelltAm: string;
+}
+
+export interface MockBenutzerKurz {
+  id: string;
+  benutzername: string;
+}
+
+export interface MockGeteiltesWorkout extends MockWorkout {
+  ownerId: string;
+  ownerBenutzername: string;
+  eingeladenAm: string;
 }
 
 export interface V1AttrappeOptionen {
@@ -60,6 +80,10 @@ export interface V1AttrappeOptionen {
   initialPasskeys?: MockPasskey[];
   initialTimer?: MockTimerEinstellung;
   initialWorkouts?: MockWorkout[];
+  initialEinladungen?: MockEinladung[];
+  initialSuchbareBenutzer?: MockBenutzerKurz[];
+  initialGeteilteWorkouts?: MockGeteiltesWorkout[];
+  initialProfilWorkouts?: Record<string, MockWorkout[]>;
 }
 
 export interface V1AttrappeZustand {
@@ -68,6 +92,11 @@ export interface V1AttrappeZustand {
   passkeys: MockPasskey[];
   timer: MockTimerEinstellung;
   workouts: MockWorkout[];
+  einladungen: MockEinladung[];
+  suchbareBenutzer: MockBenutzerKurz[];
+  geteilteWorkouts: MockGeteiltesWorkout[];
+  profilWorkouts: Record<string, MockWorkout[]>;
+  kontoGeloescht: boolean;
   naechsterFehler: {
     pfad?: string;
     methode?: string;
@@ -123,6 +152,7 @@ export async function installiereV1Attrappe(
 ): Promise<V1AttrappeZustand> {
   let passkeyZaehler = optionen.initialPasskeys?.length ?? 0;
   let workoutZaehler = optionen.initialWorkouts?.length ?? 0;
+  let einladungZaehler = optionen.initialEinladungen?.length ?? 0;
   let uebungZaehler = 0;
   let satzZaehler = 0;
 
@@ -136,6 +166,19 @@ export async function installiereV1Attrappe(
     workouts: optionen.initialWorkouts
       ? optionen.initialWorkouts.map((w) => structuredClone(w))
       : [],
+    einladungen: optionen.initialEinladungen
+      ? optionen.initialEinladungen.map((e) => ({ ...e }))
+      : [],
+    suchbareBenutzer: optionen.initialSuchbareBenutzer
+      ? optionen.initialSuchbareBenutzer.map((b) => ({ ...b }))
+      : [],
+    geteilteWorkouts: optionen.initialGeteilteWorkouts
+      ? optionen.initialGeteilteWorkouts.map((w) => structuredClone(w))
+      : [],
+    profilWorkouts: optionen.initialProfilWorkouts
+      ? structuredClone(optionen.initialProfilWorkouts)
+      : {},
+    kontoGeloescht: false,
     naechsterFehler: null,
     letztesRegistrierenCredential: null,
     letztesAnmeldenCredential: null,
@@ -147,6 +190,12 @@ export async function installiereV1Attrappe(
     bezeichnung: p.bezeichnung,
     erstelltAm: p.erstelltAm,
     ...(p.zuletztVerwendetAm ? { zuletztVerwendetAm: p.zuletztVerwendetAm } : {}),
+  });
+
+  // In gemockten E2E-Tests verhindert das Blockieren von /sw.js, dass WebKit
+  // spaetere /v1-Fetch-Aufrufe ueber den Service Worker an page.context().route() vorbeileitet.
+  await page.context().route('**/sw.js', async (route) => {
+    await route.abort();
   });
 
   await page.context().route('**/v1/**', async (route) => {
@@ -495,6 +544,218 @@ export async function installiereV1Attrappe(
       }
     }
 
+    if (pfad === '/v1/benutzer/suche' && methode === 'GET') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      const name = (url.searchParams.get('name') ?? '').trim().toLowerCase();
+      const treffer = zustand.suchbareBenutzer.find((b) => b.benutzername.toLowerCase() === name);
+      if (!treffer) {
+        await antworteJson(
+          route,
+          { code: 'BENUTZER_NICHT_GEFUNDEN', meldung: 'Kein Benutzer mit diesem exakten Namen gefunden.' },
+          404,
+        );
+        return;
+      }
+      await antworteJson(route, treffer);
+      return;
+    }
+
+    if (pfad === '/v1/workouts/geteilt' && methode === 'GET') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      await antworteJson(route, zustand.geteilteWorkouts);
+      return;
+    }
+
+    const profilWorkoutsTreffer = /^\/v1\/profile\/([0-9a-f-]+)\/workouts$/i.exec(pfad);
+    if (profilWorkoutsTreffer && methode === 'GET') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      const benutzerId = profilWorkoutsTreffer[1]!;
+      const existiert =
+        benutzerId in zustand.profilWorkouts ||
+        zustand.suchbareBenutzer.some((b) => b.id === benutzerId) ||
+        zustand.benutzer?.id === benutzerId;
+      if (!existiert) {
+        await antworteJson(
+          route,
+          { code: 'BENUTZER_NICHT_GEFUNDEN', meldung: 'Benutzerprofil nicht gefunden.' },
+          404,
+        );
+        return;
+      }
+      const liste = (zustand.profilWorkouts[benutzerId] ?? []).filter(
+        (w) => w.sichtbarkeit === 'OEFFENTLICH',
+      );
+      await antworteJson(route, liste);
+      return;
+    }
+
+    if (pfad === '/v1/dsgvo/export' && methode === 'GET') {
+      if (!zustand.angemeldet || !zustand.benutzer) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      await antworteJson(route, {
+        exportiertAm: '2026-11-19T18:30:00Z',
+        benutzer: zustand.benutzer,
+        passkeys: zustand.passkeys.map(formatPasskey),
+        ...(zustand.timer.gespeichert ? { timerEinstellung: zustand.timer } : {}),
+        workouts: zustand.workouts.map((w) => ({
+          ...w,
+          einladungen: zustand.einladungen.filter((e) => e.workoutId === w.id),
+        })),
+        erhalteneEinladungen: zustand.geteilteWorkouts.map((g, idx) => ({
+          id: erzeugeWorkoutUuid('eeeeeeee-eeee', idx + 1),
+          workoutId: g.id,
+          workoutTitel: g.titel,
+          ownerId: g.ownerId,
+          ownerBenutzername: g.ownerBenutzername,
+          status: 'AKTIV',
+          erstelltAm: g.eingeladenAm,
+        })),
+      });
+      return;
+    }
+
+    if (pfad === '/v1/konto' && methode === 'DELETE') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      zustand.angemeldet = false;
+      zustand.benutzer = null;
+      zustand.passkeys = [];
+      zustand.workouts = [];
+      zustand.einladungen = [];
+      zustand.kontoGeloescht = true;
+      await route.fulfill({ status: 204 });
+      return;
+    }
+
+    const sichtbarkeitTreffer = /^\/v1\/workouts\/([0-9a-f-]+)\/sichtbarkeit$/i.exec(pfad);
+    if (sichtbarkeitTreffer && methode === 'PATCH') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      const id = sichtbarkeitTreffer[1]!;
+      const idx = zustand.workouts.findIndex((w) => w.id === id);
+      if (idx === -1) {
+        await antworteJson(route, { code: 'WORKOUT_NICHT_GEFUNDEN', meldung: 'Workout nicht gefunden.' }, 404);
+        return;
+      }
+      const body = request.postDataJSON() as { sichtbarkeit: 'PRIVAT' | 'OEFFENTLICH' };
+      const aktualisiert: MockWorkout = {
+        ...zustand.workouts[idx]!,
+        sichtbarkeit: body.sichtbarkeit,
+        geaendertAm: '2026-11-19T19:30:00Z',
+        version: zustand.workouts[idx]!.version + 1,
+      };
+      zustand.workouts[idx] = aktualisiert;
+      await antworteJson(route, aktualisiert);
+      return;
+    }
+
+    const einladungenTreffer = /^\/v1\/workouts\/([0-9a-f-]+)\/einladungen$/i.exec(pfad);
+    if (einladungenTreffer) {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      const workoutId = einladungenTreffer[1]!;
+      const eigenesWorkout = zustand.workouts.find((w) => w.id === workoutId);
+      if (!eigenesWorkout) {
+        const fremdesWorkout =
+          zustand.geteilteWorkouts.some((w) => w.id === workoutId) ||
+          Object.values(zustand.profilWorkouts).some((liste) => liste.some((w) => w.id === workoutId));
+        if (fremdesWorkout) {
+          await route.fulfill({ status: 403 });
+          return;
+        }
+        await antworteJson(route, { code: 'WORKOUT_NICHT_GEFUNDEN', meldung: 'Workout nicht gefunden.' }, 404);
+        return;
+      }
+
+      if (methode === 'GET') {
+        await antworteJson(
+          route,
+          zustand.einladungen.filter((e) => e.workoutId === workoutId),
+        );
+        return;
+      }
+
+      if (methode === 'POST') {
+        const body = request.postDataJSON() as { benutzername: string };
+        const normalisiert = body.benutzername.trim().toLowerCase();
+        if (zustand.benutzer && normalisiert === zustand.benutzer.benutzername.toLowerCase()) {
+          await antworteJson(
+            route,
+            { code: 'SELBSTEINLADUNG', meldung: 'Du kannst dich nicht selbst einladen.' },
+            400,
+          );
+          return;
+        }
+        const ziel = zustand.suchbareBenutzer.find(
+          (b) => b.benutzername.toLowerCase() === normalisiert,
+        );
+        if (!ziel) {
+          await antworteJson(
+            route,
+            { code: 'BENUTZER_NICHT_GEFUNDEN', meldung: 'Benutzer nicht gefunden.' },
+            404,
+          );
+          return;
+        }
+        const existiert = zustand.einladungen.some(
+          (e) => e.workoutId === workoutId && e.eingeladenerId === ziel.id,
+        );
+        if (existiert) {
+          await antworteJson(
+            route,
+            { code: 'EINLADUNG_EXISTIERT_BEREITS', meldung: 'Benutzer wurde bereits eingeladen.' },
+            409,
+          );
+          return;
+        }
+        einladungZaehler += 1;
+        const neu: MockEinladung = {
+          id: erzeugeWorkoutUuid('ffffffff-ffff', einladungZaehler),
+          workoutId,
+          eingeladenerId: ziel.id,
+          eingeladenerBenutzername: ziel.benutzername,
+          status: 'AKTIV',
+          erstelltAm: '2026-11-19T19:00:00Z',
+        };
+        zustand.einladungen.push(neu);
+        await antworteJson(route, neu, 201);
+        return;
+      }
+    }
+
+    const einladungLoeschenTreffer =
+      /^\/v1\/workouts\/([0-9a-f-]+)\/einladungen\/([0-9a-f-]+)$/i.exec(pfad);
+    if (einladungLoeschenTreffer && methode === 'DELETE') {
+      if (!zustand.angemeldet) {
+        await antworteJson(route, { code: 'NICHT_ANGEMELDET', meldung: 'Anmeldung erforderlich.' }, 401);
+        return;
+      }
+      const workoutId = einladungLoeschenTreffer[1]!;
+      const eingeladenerId = einladungLoeschenTreffer[2]!;
+      zustand.einladungen = zustand.einladungen.filter(
+        (e) => !(e.workoutId === workoutId && e.eingeladenerId === eingeladenerId),
+      );
+      await route.fulfill({ status: 204 });
+      return;
+    }
+
     const workoutIdTreffer = /^\/v1\/workouts\/([0-9a-f-]+)$/i.exec(pfad);
     if (workoutIdTreffer) {
       if (!zustand.angemeldet) {
@@ -502,9 +763,23 @@ export async function installiereV1Attrappe(
         return;
       }
 
-      const id = workoutIdTreffer[1];
+      const id = workoutIdTreffer[1]!;
       const gefundenIndex = zustand.workouts.findIndex((w) => w.id === id);
       if (gefundenIndex === -1) {
+        if (methode === 'GET') {
+          const geteilt = zustand.geteilteWorkouts.find((w) => w.id === id);
+          if (geteilt) {
+            await antworteJson(route, geteilt);
+            return;
+          }
+          for (const liste of Object.values(zustand.profilWorkouts)) {
+            const oeffentlich = liste.find((w) => w.id === id && w.sichtbarkeit === 'OEFFENTLICH');
+            if (oeffentlich) {
+              await antworteJson(route, oeffentlich);
+              return;
+            }
+          }
+        }
         await antworteJson(
           route,
           { code: 'WORKOUT_NICHT_GEFUNDEN', meldung: 'Das gesuchte Workout wurde nicht gefunden.' },

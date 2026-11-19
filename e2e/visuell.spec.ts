@@ -309,4 +309,125 @@ test.describe('Visuelle Regression (nur Chromium – Nutzerentscheid C)', () => 
       animations: 'disabled',
     });
   });
+
+  test('Snapshot: entdecken-angemeldet-desktop-hell', async ({ page }) => {
+    await installiereV1Attrappe(page, {
+      initialAngemeldet: true,
+      initialGeteilteWorkouts: [
+        {
+          id: 'bbbbbbbb-bbbb-4aaa-8aaa-000000000201',
+          ownerId: '44444444-4444-4444-8444-444444444441',
+          ownerBenutzername: 'anna.fit',
+          typ: 'CALISTHENICS',
+          titel: 'Annas Ring-Training',
+          startZeit: '2026-11-19T16:00:00Z',
+          dauerSekunden: 2700,
+          sichtbarkeit: 'PRIVAT',
+          herkunft: 'MANUELL',
+          erstelltAm: '2026-11-19T16:00:00Z',
+          geaendertAm: '2026-11-19T16:45:00Z',
+          version: 1,
+          eingeladenAm: '2026-11-19T17:00:00Z',
+          uebungen: [
+            {
+              id: 'cccccccc-cccc-4aaa-8aaa-000000000201',
+              position: 0,
+              name: 'Ring Dips',
+              saetze: [
+                {
+                  id: 'dddddddd-dddd-4aaa-8aaa-000000000201',
+                  position: 0,
+                  wiederholungen: 10,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+
+    await page.goto('/entdecken');
+    await expect(page.getByText('Annas Ring-Training')).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('entdecken-angemeldet-desktop-hell.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: entdecken-angemeldet-mobil-dunkel', async ({ page }) => {
+    await installiereV1Attrappe(page, {
+      initialAngemeldet: true,
+      initialGeteilteWorkouts: [
+        {
+          id: 'bbbbbbbb-bbbb-4aaa-8aaa-000000000201',
+          ownerId: '44444444-4444-4444-8444-444444444441',
+          ownerBenutzername: 'anna.fit',
+          typ: 'CALISTHENICS',
+          titel: 'Annas Ring-Training',
+          startZeit: '2026-11-19T16:00:00Z',
+          dauerSekunden: 2700,
+          sichtbarkeit: 'PRIVAT',
+          herkunft: 'MANUELL',
+          erstelltAm: '2026-11-19T16:00:00Z',
+          geaendertAm: '2026-11-19T16:45:00Z',
+          version: 1,
+          eingeladenAm: '2026-11-19T17:00:00Z',
+          uebungen: [],
+        },
+      ],
+    });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+
+    await page.goto('/entdecken');
+    await expect(page.getByText('Annas Ring-Training')).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('entdecken-angemeldet-mobil-dunkel.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: datenschutz-desktop-hell', async ({ page }) => {
+    await installiereV1Attrappe(page, { initialAngemeldet: false });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+
+    await page.goto('/datenschutz');
+    await expect(
+      page.getByRole('heading', { level: 1, name: /Datenschutz & PoC-Hinweis/i }),
+    ).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('datenschutz-desktop-hell.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: datenschutz-mobil-dunkel', async ({ page }) => {
+    await installiereV1Attrappe(page, { initialAngemeldet: false });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+
+    await page.goto('/datenschutz');
+    await expect(
+      page.getByRole('heading', { level: 1, name: /Datenschutz & PoC-Hinweis/i }),
+    ).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('datenschutz-mobil-dunkel.png', {
+      animations: 'disabled',
+    });
+  });
 });

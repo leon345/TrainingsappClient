@@ -134,6 +134,7 @@ test.describe('Workout- & Calisthenics-Tracking (Produktions-Build)', () => {
     await dialog.getByRole('button', { name: 'Löschen' }).click();
 
     await expect(page).toHaveURL(/\/workouts$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Workouts' })).toBeVisible();
     await expect(page.getByText('Statics & Pull Final')).toBeHidden();
     await expect(page.getByText('Ganzkörper Basis')).toBeVisible();
   });

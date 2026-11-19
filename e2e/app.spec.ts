@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 test.describe('Trainingsapp Client-Grundgeruest (Produktions-Build)', () => {
@@ -151,8 +153,11 @@ test.describe('Trainingsapp Client-Grundgeruest (Produktions-Build)', () => {
       const text = await antwort.text();
       const cacheNamen = await caches.keys();
       const trefferInCaches: string[] = [];
+      let anzahlStatischeCacheEintraege = 0;
       for (const name of cacheNamen) {
         const cache = await caches.open(name);
+        const eintraege = await cache.keys();
+        anzahlStatischeCacheEintraege += eintraege.length;
         if (await cache.match('/v1/info')) {
           trefferInCaches.push(name);
         }
@@ -162,6 +167,7 @@ test.describe('Trainingsapp Client-Grundgeruest (Produktions-Build)', () => {
         contentType,
         istHtmlFallback: /<!doctype html>|<html/i.test(text),
         trefferInCaches,
+        anzahlStatischeCacheEintraege,
       };
     });
 
@@ -169,5 +175,11 @@ test.describe('Trainingsapp Client-Grundgeruest (Produktions-Build)', () => {
     expect(apiPruefung.contentType).not.toContain('text/html');
     expect(apiPruefung.istHtmlFallback).toBe(false);
     expect(apiPruefung.trefferInCaches).toEqual([]);
+    expect(apiPruefung.anzahlStatischeCacheEintraege).toBeGreaterThan(0);
+
+    // Produktions-Build darf keine galerie*-Dateien enthalten
+    const distEintraege = readdirSync(join(process.cwd(), 'dist'));
+    const galerieDateien = distEintraege.filter((name) => name.toLowerCase().includes('galerie'));
+    expect(galerieDateien).toEqual([]);
   });
 });
