@@ -4,6 +4,7 @@ import type { components, paths } from './schema';
 export type FehlerV1 = components['schemas']['FehlerV1'];
 export type SystemInfoV1 = components['schemas']['SystemInfoV1'];
 export type BenutzerV1 = components['schemas']['BenutzerV1'];
+export type BenutzerKurzV1 = components['schemas']['BenutzerKurzV1'];
 export type PasskeyV1 = components['schemas']['PasskeyV1'];
 export type WebAuthnOptionenV1 = components['schemas']['WebAuthnOptionenV1'];
 export type PasskeyRegistrierungsCredentialV1 =
@@ -22,6 +23,11 @@ export type UebungV1 = components['schemas']['UebungV1'];
 export type WorkoutErstellenV1 = components['schemas']['WorkoutErstellenV1'];
 export type WorkoutAktualisierenV1 = components['schemas']['WorkoutAktualisierenV1'];
 export type WorkoutV1 = components['schemas']['WorkoutV1'];
+export type WorkoutSichtbarkeitV1 = components['schemas']['WorkoutSichtbarkeitV1'];
+export type WorkoutEinladungV1 = components['schemas']['WorkoutEinladungV1'];
+export type WorkoutEinladungErstellenV1 = components['schemas']['WorkoutEinladungErstellenV1'];
+export type GeteiltesWorkoutV1 = components['schemas']['GeteiltesWorkoutV1'];
+export type DsgvoExportV1 = components['schemas']['DsgvoExportV1'];
 
 export function erzeugeApiClient(optionen?: ClientOptions) {
   return createClient<paths>({
@@ -69,6 +75,15 @@ export function istTimerEinstellungV1(wert: unknown): wert is TimerEinstellungV1
     typeof kandidat.pauseSekunden === 'number' &&
     typeof kandidat.gespeichert === 'boolean'
   );
+}
+
+export function istBenutzerKurzV1(wert: unknown): wert is BenutzerKurzV1 {
+  if (typeof wert !== 'object' || wert === null) {
+    return false;
+  }
+
+  const kandidat = wert as Record<string, unknown>;
+  return typeof kandidat.id === 'string' && typeof kandidat.benutzername === 'string';
 }
 
 export function istWorkoutV1(wert: unknown): wert is WorkoutV1 {

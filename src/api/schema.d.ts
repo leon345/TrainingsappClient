@@ -64,6 +64,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/benutzer/suche": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Benutzer per exaktem Benutzernamen suchen
+         * @description Sucht genau nach dem normalisierten Benutzernamen (keine Teilstringsuche, keine Liste aller Benutzer).
+         */
+        get: operations["sucheBenutzerV1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dsgvo/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vollständigen DSGVO-Datenexport abrufen
+         * @description Liefert synchron alle gespeicherten Daten des angemeldeten Benutzers (Profil, Passkey-Metadaten ohne kryptografische Schlüssel, Timer-Einstellung, eigene Workouts inkl. Übungen/Sätzen/Einladungen sowie erhaltene Einladungen) als JSON.
+         */
+        get: operations["exportiereDsgvoDatenV1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ich": {
         parameters: {
             query?: never;
@@ -99,6 +139,26 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/konto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Eigenes Benutzerkonto vollständig löschen
+         * @description Löscht Konto, Passkeys, Timer-Einstellung, Workouts, Übungen, Sätze, Einladungen und ausstehende Registrierungen restlos in einer Transaktion und beendet sofort die aktive Sitzung.
+         */
+        delete: operations["loescheKontoV1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -170,6 +230,26 @@ export interface paths {
          * @description Ändert die Bezeichnung eines eigenen Passkeys.
          */
         patch: operations["passkeyUmbenennenV1"];
+        trace?: never;
+    };
+    "/v1/profile/{benutzerId}/workouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Öffentliche Workouts eines Benutzerprofils abrufen
+         * @description Liefert ausschließlich öffentliche Workouts des angegebenen Benutzers für angemeldete USER bzw. den Besitzer selbst. Fremde ADMIN-Konten erhalten keinen Zugriff.
+         */
+        get: operations["listeOeffentlicheProfilWorkoutsV1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/registrieren": {
@@ -260,6 +340,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/geteilt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Geteilte Workouts auflisten
+         * @description Liefert alle Workouts (privat und öffentlich), zu denen der angemeldete Benutzer explizit eingeladen wurde.
+         */
+        get: operations["listeGeteilteWorkoutsV1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workouts/{id}": {
         parameters: {
             query?: never;
@@ -269,7 +369,7 @@ export interface paths {
         };
         /**
          * Workout-Details abrufen
-         * @description Liefert ein einzelnes Workout inkl. aller Übungen und Sätze. Fremde private Workouts liefern 404.
+         * @description Liefert ein einzelnes Workout inkl. aller Übungen und Sätze (Besitzer, eingeladener USER oder öffentliches Workout für USER). Unzugängliche Workouts liefern 404.
          */
         get: operations["getWorkoutV1"];
         /**
@@ -288,6 +388,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workouts/{id}/einladungen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Einladungen eines eigenen Workouts auflisten
+         * @description Liefert alle eingeladenen Benutzer eines eigenen Workouts. Nur für den Besitzer zugänglich.
+         */
+        get: operations["listeWorkoutEinladungenV1"];
+        put?: never;
+        /**
+         * Benutzer zu einem eigenen Workout einladen
+         * @description Lädt einen Benutzer per exaktem Benutzernamen zum Lesen eines eigenen Workouts ein.
+         */
+        post: operations["erstelleWorkoutEinladungV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/{id}/einladungen/{eingeladenerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Einladung an einem eigenen Workout entfernen
+         * @description Entfernt die Einladung eines Benutzers an einem eigenen Workout. Nur für den Besitzer zugänglich.
+         */
+        delete: operations["loescheWorkoutEinladungV1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workouts/{id}/sichtbarkeit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Sichtbarkeit eines eigenen Workouts umschalten
+         * @description Ändert die Sichtbarkeit eines eigenen Workouts zwischen PRIVAT und OEFFENTLICH.
+         */
+        patch: operations["aendereWorkoutSichtbarkeitV1"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -304,6 +468,16 @@ export interface components {
              * @example max.muster
              */
             benutzername?: string;
+        };
+        /** @description Öffentliche Minimaldaten eines Benutzers zur Vorbereitung von Einladungen */
+        BenutzerKurzV1: {
+            /** @description Eindeutige Benutzer-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * @description Normalisierter Benutzername
+             * @example max.muster
+             */
+            benutzername: string;
         };
         /** @description Informationen zum angemeldeten Benutzerkonto */
         BenutzerV1: {
@@ -324,6 +498,91 @@ export interface components {
             /** @description Zeitpunkt der DSGVO-Einwilligung (UTC) */
             einwilligungAm: components["schemas"]["Instant"];
         };
+        /** @description Exportierte Benutzerprofildaten */
+        DsgvoBenutzerV1: {
+            /** @description Eindeutige Benutzer-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * @description Normalisierter Benutzername
+             * @example max.muster
+             */
+            benutzername: string;
+            /** @description Rolle des Benutzers */
+            rolle: components["schemas"]["Rolle"];
+            /** @description Erstellungszeitpunkt des Kontos (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+            /** @description Zeitpunkt der Einwilligung (UTC) */
+            einwilligungAm: components["schemas"]["Instant"];
+        };
+        /** @description Exportierte erhaltene Einladung zu einem Workout */
+        DsgvoErhalteneEinladungV1: {
+            /** @description Eindeutige Einladungs-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /** @description Workout-ID (UUID) */
+            workoutId: components["schemas"]["UUID"];
+            /** @description Titel des geteilten Workouts */
+            workoutTitel: string;
+            /** @description Benutzer-ID des Workout-Besitzers (UUID) */
+            ownerId: components["schemas"]["UUID"];
+            /** @description Normalisierter Benutzername des Workout-Besitzers */
+            ownerBenutzername: string;
+            /** @description Status der Einladung */
+            status: components["schemas"]["WorkoutEinladungStatus"];
+            /** @description Erstellungszeitpunkt der Einladung (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+        };
+        /** @description Vollständiger DSGVO-Datenexport aller gespeicherten Daten des angemeldeten Benutzers */
+        DsgvoExportV1: {
+            /** @description Zeitpunkt des Exports (UTC) */
+            exportiertAm: components["schemas"]["Instant"];
+            /** @description Profildaten des Benutzers */
+            benutzer: components["schemas"]["DsgvoBenutzerV1"];
+            /** @description Passkey-Metadaten (ohne kryptografisches Schlüsselmaterial) */
+            passkeys: components["schemas"]["PasskeyV1"][];
+            /** @description Gespeicherte Intervalltimer-Einstellung (null, falls noch keine gespeichert) */
+            timerEinstellung?: components["schemas"]["TimerEinstellungV1"];
+            /** @description Eigene Workouts inkl. Übungen, Sätzen und ausgehenden Einladungen */
+            workouts: components["schemas"]["DsgvoWorkoutV1"][];
+            /** @description Erhaltene Einladungen zu Workouts anderer Benutzer */
+            erhalteneEinladungen: components["schemas"]["DsgvoErhalteneEinladungV1"][];
+        };
+        /** @description Exportiertes eigenes Workout inkl. Übungen, Sätzen und ausgehenden Einladungen */
+        DsgvoWorkoutV1: {
+            /** @description Eindeutige Workout-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /** @description Art des Workouts */
+            typ: components["schemas"]["WorkoutTyp"];
+            /** @description Titel des Workouts */
+            titel: string;
+            /** @description Startzeitpunkt des Workouts (UTC) */
+            startZeit: components["schemas"]["Instant"];
+            /**
+             * Format: int32
+             * @description Gesamtdauer des Workouts in ganzen Sekunden
+             */
+            dauerSekunden?: number;
+            /** @description Optionale Trainingsnotiz */
+            notiz?: string;
+            /** @description Sichtbarkeit des Workouts */
+            sichtbarkeit: components["schemas"]["Sichtbarkeit"];
+            /** @description Herkunft des Workouts */
+            herkunft: components["schemas"]["Herkunft"];
+            /** @description Externe Quell-ID bei importierten Workouts */
+            externeId?: string;
+            /** @description Übungen des Workouts in Ausführungsreihenfolge */
+            uebungen: components["schemas"]["UebungV1"][];
+            /** @description Ausgehende Einladungen für dieses Workout */
+            einladungen: components["schemas"]["WorkoutEinladungV1"][];
+            /** @description Erstellungszeitpunkt (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+            /** @description Zeitpunkt der letzten Änderung (UTC) */
+            geaendertAm: components["schemas"]["Instant"];
+            /**
+             * Format: int64
+             * @description Version
+             */
+            version: number;
+        };
         /** @description Einheitliches Fehlerformat der API */
         FehlerV1: {
             /**
@@ -336,6 +595,51 @@ export interface components {
              * @example Die Anfrage enthält ungültige Eingaben.
              */
             meldung: string;
+        };
+        /** @description Workout, zu dem der angemeldete Benutzer explizit eingeladen wurde */
+        GeteiltesWorkoutV1: {
+            /** @description Eindeutige Workout-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /** @description Benutzer-ID des Workout-Besitzers (UUID) */
+            ownerId: components["schemas"]["UUID"];
+            /**
+             * @description Normalisierter Benutzername des Workout-Besitzers
+             * @example max.muster
+             */
+            ownerBenutzername: string;
+            /** @description Art des Workouts */
+            typ: components["schemas"]["WorkoutTyp"];
+            /**
+             * @description Titel des Workouts
+             * @example Oberkörper Calisthenics
+             */
+            titel: string;
+            /** @description Startzeitpunkt des Workouts (UTC) */
+            startZeit: components["schemas"]["Instant"];
+            /**
+             * Format: int32
+             * @description Gesamtdauer des Workouts in ganzen Sekunden
+             */
+            dauerSekunden?: number;
+            /** @description Optionale Trainingsnotiz */
+            notiz?: string;
+            /** @description Sichtbarkeit des Workouts */
+            sichtbarkeit: components["schemas"]["Sichtbarkeit"];
+            /** @description Herkunft des Workouts */
+            herkunft: components["schemas"]["Herkunft"];
+            /** @description Übungen des Workouts in Ausführungsreihenfolge */
+            uebungen: components["schemas"]["UebungV1"][];
+            /** @description Erstellungszeitpunkt des Workouts (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+            /** @description Zeitpunkt der letzten Änderung (UTC) */
+            geaendertAm: components["schemas"]["Instant"];
+            /**
+             * Format: int64
+             * @description Version für optimistische Sperre
+             */
+            version: number;
+            /** @description Zeitpunkt der Einladung (UTC) */
+            eingeladenAm: components["schemas"]["Instant"];
         };
         /** @enum {string} */
         Herkunft: "MANUELL" | "APPLE_HEALTH";
@@ -469,6 +773,8 @@ export interface components {
              */
             einwilligungErteilt: boolean;
         };
+        /** @enum {string} */
+        Rolle: "USER" | "ADMIN";
         /** @description Eingabedaten für einen einzelnen Satz (Wiederholungen und/oder Haltedauer in ganzen Sekunden) */
         SatzEingabeV1: {
             /**
@@ -667,6 +973,34 @@ export interface components {
             /** @description Übungen des Workouts in Ausführungsreihenfolge */
             uebungen?: components["schemas"]["UebungEingabeV1"][];
         };
+        /** @description Anfrage zum Einladen eines Benutzers zu einem eigenen Workout */
+        WorkoutEinladungErstellenV1: {
+            /**
+             * @description Exakter Benutzername des einzuladenden Benutzers
+             * @example max.muster
+             */
+            benutzername: string;
+        };
+        /** @enum {string} */
+        WorkoutEinladungStatus: "AKTIV";
+        /** @description Einladung eines Benutzers zu einem Workout */
+        WorkoutEinladungV1: {
+            /** @description Eindeutige Einladungs-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /** @description Workout-ID (UUID) */
+            workoutId: components["schemas"]["UUID"];
+            /** @description Benutzer-ID des eingeladenen Benutzers (UUID) */
+            eingeladenerId: components["schemas"]["UUID"];
+            /**
+             * @description Normalisierter Benutzername des eingeladenen Benutzers
+             * @example max.muster
+             */
+            eingeladenerBenutzername: string;
+            /** @description Status der Einladung */
+            status: components["schemas"]["WorkoutEinladungStatus"];
+            /** @description Erstellungszeitpunkt der Einladung (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+        };
         /** @description Anfrage zum Erstellen eines neuen Kraft- oder Calisthenics-Workouts */
         WorkoutErstellenV1: {
             /**
@@ -702,6 +1036,11 @@ export interface components {
             sichtbarkeit?: components["schemas"]["Sichtbarkeit"];
             /** @description Übungen des Workouts in Ausführungsreihenfolge */
             uebungen?: components["schemas"]["UebungEingabeV1"][];
+        };
+        /** @description Anfrage zum Umschalten der Sichtbarkeit eines eigenen Workouts */
+        WorkoutSichtbarkeitV1: {
+            /** @description Neue Sichtbarkeit des Workouts */
+            sichtbarkeit: components["schemas"]["Sichtbarkeit"];
         };
         /** @enum {string} */
         WorkoutTyp: "KRAFT" | "CALISTHENICS";
@@ -866,6 +1205,108 @@ export interface operations {
             };
         };
     };
+    sucheBenutzerV1: {
+        parameters: {
+            query: {
+                /** @description Exakter Benutzername (Groß-/Kleinschreibung wird normalisiert) */
+                name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Benutzer gefunden */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenutzerKurzV1"];
+                };
+            };
+            /** @description Ungültiger Benutzername */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Benutzer nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Rate-Limit überschritten */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    exportiereDsgvoDatenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Datenexport erfolgreich erstellt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DsgvoExportV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ichV1: {
         parameters: {
             query?: never;
@@ -944,6 +1385,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FehlerV1"];
                 };
+            };
+        };
+    };
+    loescheKontoV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Konto vollständig gelöscht und Sitzung beendet */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1182,6 +1657,64 @@ export interface operations {
             };
             /** @description Passkey nicht gefunden */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    listeOeffentlicheProfilWorkoutsV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                benutzerId: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Öffentliche Workouts erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"][];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Kein Zugriff auf fremde Trainingsdaten */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Benutzer nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Rate-Limit überschritten */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1468,6 +2001,42 @@ export interface operations {
             };
         };
     };
+    listeGeteilteWorkoutsV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Geteilte Workouts erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeteiltesWorkoutV1"][];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getWorkoutV1: {
         parameters: {
             query?: never;
@@ -1601,6 +2170,230 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    listeWorkoutEinladungenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Einladungen erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutEinladungV1"][];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    erstelleWorkoutEinladungV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutEinladungErstellenV1"];
+            };
+        };
+        responses: {
+            /** @description Einladung erfolgreich erstellt */
+            201: {
+                headers: {
+                    /** @description Pfad zur neu erstellten Einladung */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutEinladungV1"];
+                };
+            };
+            /** @description Ungültiger Benutzername oder Selbsteinladung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout oder Benutzer nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Benutzer wurde bereits zu diesem Workout eingeladen */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    loescheWorkoutEinladungV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eingeladenerId: components["schemas"]["UUID"];
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Einladung erfolgreich entfernt */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workout oder Einladung nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    aendereWorkoutSichtbarkeitV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkoutSichtbarkeitV1"];
+            };
+        };
+        responses: {
+            /** @description Sichtbarkeit erfolgreich aktualisiert */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutV1"];
+                };
+            };
+            /** @description Ungültige Eingabedaten */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
             };
             /** @description Nicht angemeldet */
             401: {

@@ -22,6 +22,22 @@ components:
           description: Optionaler Benutzername; leer für Discoverable Passkey Login
           examples:
           - max.muster
+    BenutzerKurzV1:
+      description: Öffentliche Minimaldaten eines Benutzers zur Vorbereitung von Einladungen
+      type: object
+      required:
+      - id
+      - benutzername
+      properties:
+        id:
+          description: Eindeutige Benutzer-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        benutzername:
+          type: string
+          description: Normalisierter Benutzername
+          examples:
+          - max.muster
     BenutzerV1:
       description: Informationen zum angemeldeten Benutzerkonto
       type: object
@@ -54,6 +70,189 @@ components:
           description: Zeitpunkt der DSGVO-Einwilligung (UTC)
           type: string
           $ref: "#/components/schemas/Instant"
+    DsgvoBenutzerV1:
+      type: object
+      description: Exportierte Benutzerprofildaten
+      required:
+      - id
+      - benutzername
+      - rolle
+      - erstelltAm
+      - einwilligungAm
+      properties:
+        id:
+          description: Eindeutige Benutzer-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        benutzername:
+          type: string
+          description: Normalisierter Benutzername
+          examples:
+          - max.muster
+        rolle:
+          description: Rolle des Benutzers
+          type: string
+          $ref: "#/components/schemas/Rolle"
+        erstelltAm:
+          description: Erstellungszeitpunkt des Kontos (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        einwilligungAm:
+          description: Zeitpunkt der Einwilligung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+    DsgvoErhalteneEinladungV1:
+      type: object
+      description: Exportierte erhaltene Einladung zu einem Workout
+      required:
+      - id
+      - workoutId
+      - workoutTitel
+      - ownerId
+      - ownerBenutzername
+      - status
+      - erstelltAm
+      properties:
+        id:
+          description: Eindeutige Einladungs-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        workoutId:
+          description: Workout-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        workoutTitel:
+          type: string
+          description: Titel des geteilten Workouts
+        ownerId:
+          description: Benutzer-ID des Workout-Besitzers (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        ownerBenutzername:
+          type: string
+          description: Normalisierter Benutzername des Workout-Besitzers
+        status:
+          description: Status der Einladung
+          type: string
+          $ref: "#/components/schemas/WorkoutEinladungStatus"
+        erstelltAm:
+          description: Erstellungszeitpunkt der Einladung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+    DsgvoExportV1:
+      description: Vollständiger DSGVO-Datenexport aller gespeicherten Daten des angemeldeten
+        Benutzers
+      type: object
+      required:
+      - exportiertAm
+      - benutzer
+      - passkeys
+      - workouts
+      - erhalteneEinladungen
+      properties:
+        exportiertAm:
+          description: Zeitpunkt des Exports (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        benutzer:
+          description: Profildaten des Benutzers
+          type: object
+          $ref: "#/components/schemas/DsgvoBenutzerV1"
+        passkeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/PasskeyV1"
+          description: Passkey-Metadaten (ohne kryptografisches Schlüsselmaterial)
+        timerEinstellung:
+          description: "Gespeicherte Intervalltimer-Einstellung (null, falls noch\
+            \ keine gespeichert)"
+          type: object
+          $ref: "#/components/schemas/TimerEinstellungV1"
+        workouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DsgvoWorkoutV1"
+          description: "Eigene Workouts inkl. Übungen, Sätzen und ausgehenden Einladungen"
+        erhalteneEinladungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/DsgvoErhalteneEinladungV1"
+          description: Erhaltene Einladungen zu Workouts anderer Benutzer
+    DsgvoWorkoutV1:
+      type: object
+      description: "Exportiertes eigenes Workout inkl. Übungen, Sätzen und ausgehenden\
+        \ Einladungen"
+      required:
+      - id
+      - typ
+      - titel
+      - startZeit
+      - sichtbarkeit
+      - herkunft
+      - uebungen
+      - einladungen
+      - erstelltAm
+      - geaendertAm
+      - version
+      properties:
+        id:
+          description: Eindeutige Workout-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        typ:
+          description: Art des Workouts
+          type: string
+          $ref: "#/components/schemas/WorkoutTyp"
+        titel:
+          type: string
+          description: Titel des Workouts
+        startZeit:
+          description: Startzeitpunkt des Workouts (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Gesamtdauer des Workouts in ganzen Sekunden
+        notiz:
+          type: string
+          description: Optionale Trainingsnotiz
+        sichtbarkeit:
+          description: Sichtbarkeit des Workouts
+          type: string
+          $ref: "#/components/schemas/Sichtbarkeit"
+        herkunft:
+          description: Herkunft des Workouts
+          type: string
+          $ref: "#/components/schemas/Herkunft"
+        externeId:
+          type: string
+          description: Externe Quell-ID bei importierten Workouts
+        uebungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/UebungV1"
+          description: Übungen des Workouts in Ausführungsreihenfolge
+        einladungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutEinladungV1"
+          description: Ausgehende Einladungen für dieses Workout
+        erstelltAm:
+          description: Erstellungszeitpunkt (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        geaendertAm:
+          description: Zeitpunkt der letzten Änderung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Version
     FehlerV1:
       description: Einheitliches Fehlerformat der API
       type: object
@@ -71,6 +270,89 @@ components:
           description: Verständliche Fehlerbeschreibung
           examples:
           - Die Anfrage enthält ungültige Eingaben.
+    GeteiltesWorkoutV1:
+      description: "Workout, zu dem der angemeldete Benutzer explizit eingeladen wurde"
+      type: object
+      required:
+      - id
+      - ownerId
+      - ownerBenutzername
+      - typ
+      - titel
+      - startZeit
+      - sichtbarkeit
+      - herkunft
+      - uebungen
+      - erstelltAm
+      - geaendertAm
+      - version
+      - eingeladenAm
+      properties:
+        id:
+          description: Eindeutige Workout-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        ownerId:
+          description: Benutzer-ID des Workout-Besitzers (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        ownerBenutzername:
+          type: string
+          description: Normalisierter Benutzername des Workout-Besitzers
+          examples:
+          - max.muster
+        typ:
+          description: Art des Workouts
+          type: string
+          $ref: "#/components/schemas/WorkoutTyp"
+        titel:
+          type: string
+          description: Titel des Workouts
+          examples:
+          - Oberkörper Calisthenics
+        startZeit:
+          description: Startzeitpunkt des Workouts (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        dauerSekunden:
+          type: integer
+          format: int32
+          maximum: 86400
+          minimum: 1
+          description: Gesamtdauer des Workouts in ganzen Sekunden
+        notiz:
+          type: string
+          description: Optionale Trainingsnotiz
+        sichtbarkeit:
+          description: Sichtbarkeit des Workouts
+          type: string
+          $ref: "#/components/schemas/Sichtbarkeit"
+        herkunft:
+          description: Herkunft des Workouts
+          type: string
+          $ref: "#/components/schemas/Herkunft"
+        uebungen:
+          type: array
+          items:
+            $ref: "#/components/schemas/UebungV1"
+          description: Übungen des Workouts in Ausführungsreihenfolge
+        erstelltAm:
+          description: Erstellungszeitpunkt des Workouts (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        geaendertAm:
+          description: Zeitpunkt der letzten Änderung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Version für optimistische Sperre
+        eingeladenAm:
+          description: Zeitpunkt der Einladung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
     Herkunft:
       type: string
       enum:
@@ -227,8 +509,8 @@ components:
           - YubiKey Arbeit
           pattern: \S
     PasskeyV1:
-      description: Gespeicherter Passkey eines Benutzers (ohne kryptografisches Schlüsselmaterial)
       type: object
+      description: Gespeicherter Passkey eines Benutzers (ohne kryptografisches Schlüsselmaterial)
       required:
       - id
       - bezeichnung
@@ -297,6 +579,11 @@ components:
           description: Ausdrückliche Einwilligung in die Datenverarbeitung
           examples:
           - true
+    Rolle:
+      type: string
+      enum:
+      - USER
+      - ADMIN
     SatzEingabeV1:
       description: Eingabedaten für einen einzelnen Satz (Wiederholungen und/oder
         Haltedauer in ganzen Sekunden)
@@ -335,8 +622,8 @@ components:
           examples:
           - 90
     SatzV1:
-      description: Gespeicherter Satz einer Übung
       type: object
+      description: Gespeicherter Satz einer Übung
       required:
       - id
       - position
@@ -420,8 +707,8 @@ components:
           examples:
           - 15
     TimerEinstellungV1:
-      description: Intervalltimer-Einstellung eines Benutzers in ganzen Sekunden
       type: object
+      description: Intervalltimer-Einstellung eines Benutzers in ganzen Sekunden
       required:
       - trainingSekunden
       - pauseSekunden
@@ -478,8 +765,8 @@ components:
             $ref: "#/components/schemas/SatzEingabeV1"
           description: Sätze der Übung in Ausführungsreihenfolge
     UebungV1:
-      description: Gespeicherte Übung eines Workouts inkl. Sätzen
       type: object
+      description: Gespeicherte Übung eines Workouts inkl. Sätzen
       required:
       - id
       - position
@@ -616,6 +903,58 @@ components:
           items:
             $ref: "#/components/schemas/UebungEingabeV1"
           description: Übungen des Workouts in Ausführungsreihenfolge
+    WorkoutEinladungErstellenV1:
+      description: Anfrage zum Einladen eines Benutzers zu einem eigenen Workout
+      type: object
+      required:
+      - benutzername
+      properties:
+        benutzername:
+          type: string
+          description: Exakter Benutzername des einzuladenden Benutzers
+          examples:
+          - max.muster
+          pattern: \S
+    WorkoutEinladungStatus:
+      type: string
+      enum:
+      - AKTIV
+    WorkoutEinladungV1:
+      type: object
+      description: Einladung eines Benutzers zu einem Workout
+      required:
+      - id
+      - workoutId
+      - eingeladenerId
+      - eingeladenerBenutzername
+      - status
+      - erstelltAm
+      properties:
+        id:
+          description: Eindeutige Einladungs-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        workoutId:
+          description: Workout-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        eingeladenerId:
+          description: Benutzer-ID des eingeladenen Benutzers (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        eingeladenerBenutzername:
+          type: string
+          description: Normalisierter Benutzername des eingeladenen Benutzers
+          examples:
+          - max.muster
+        status:
+          description: Status der Einladung
+          type: string
+          $ref: "#/components/schemas/WorkoutEinladungStatus"
+        erstelltAm:
+          description: Erstellungszeitpunkt der Einladung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
     WorkoutErstellenV1:
       description: Anfrage zum Erstellen eines neuen Kraft- oder Calisthenics-Workouts
       type: object
@@ -668,6 +1007,16 @@ components:
           items:
             $ref: "#/components/schemas/UebungEingabeV1"
           description: Übungen des Workouts in Ausführungsreihenfolge
+    WorkoutSichtbarkeitV1:
+      description: Anfrage zum Umschalten der Sichtbarkeit eines eigenen Workouts
+      type: object
+      required:
+      - sichtbarkeit
+      properties:
+        sichtbarkeit:
+          description: Neue Sichtbarkeit des Workouts
+          type: string
+          $ref: "#/components/schemas/Sichtbarkeit"
     WorkoutTyp:
       type: string
       enum:
@@ -748,12 +1097,20 @@ info:
 tags:
 - name: Authentifizierung
   description: "Passkey-Registrierung, Anmeldung, Abmeldung und aktueller Benutzer"
+- name: Benutzer
+  description: Exakte Benutzernamenssuche zur Vorbereitung von Einladungen
+- name: DSGVO
+  description: Datenexport und Kontolöschung nach DSGVO
 - name: Passkeys
   description: Verwaltung der eigenen Passkeys
+- name: Profile
+  description: Öffentliche Workouts eines Benutzerprofils
 - name: System
   description: Systeminformationen des Servers
 - name: Timer
   description: Synchronisierte Intervalltimer-Einstellungen
+- name: Workout-Einladungen
+  description: Einladen und Entfernen von Benutzern an eigenen Workouts
 - name: Workouts
   description: Verwaltung von Kraft- und Calisthenics-Workouts
 paths:
@@ -839,6 +1196,83 @@ paths:
                 $ref: "#/components/schemas/FehlerV1"
         "400":
           description: Bad Request
+  /v1/benutzer/suche:
+    get:
+      summary: Benutzer per exaktem Benutzernamen suchen
+      description: "Sucht genau nach dem normalisierten Benutzernamen (keine Teilstringsuche,\
+        \ keine Liste aller Benutzer)."
+      operationId: sucheBenutzerV1
+      tags:
+      - Benutzer
+      parameters:
+      - description: Exakter Benutzername (Groß-/Kleinschreibung wird normalisiert)
+        required: true
+        name: name
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Benutzer gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BenutzerKurzV1"
+        "400":
+          description: Ungültiger Benutzername
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Benutzer nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/dsgvo/export:
+    get:
+      summary: Vollständigen DSGVO-Datenexport abrufen
+      description: "Liefert synchron alle gespeicherten Daten des angemeldeten Benutzers\
+        \ (Profil, Passkey-Metadaten ohne kryptografische Schlüssel, Timer-Einstellung,\
+        \ eigene Workouts inkl. Übungen/Sätzen/Einladungen sowie erhaltene Einladungen)\
+        \ als JSON."
+      operationId: exportiereDsgvoDatenV1
+      tags:
+      - DSGVO
+      responses:
+        "200":
+          description: Datenexport erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DsgvoExportV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /v1/ich:
     get:
       summary: Aktuell angemeldeten Benutzer abrufen
@@ -886,6 +1320,28 @@ paths:
                 $ref: "#/components/schemas/FehlerV1"
         "500":
           description: Interner Serverfehler
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/konto:
+    delete:
+      summary: Eigenes Benutzerkonto vollständig löschen
+      description: "Löscht Konto, Passkeys, Timer-Einstellung, Workouts, Übungen,\
+        \ Sätze, Einladungen und ausstehende Registrierungen restlos in einer Transaktion\
+        \ und beendet sofort die aktive Sitzung."
+      operationId: loescheKontoV1
+      tags:
+      - DSGVO
+      responses:
+        "204":
+          description: Konto vollständig gelöscht und Sitzung beendet
+        "401":
+          description: Nicht angemeldet
           content:
             application/json:
               schema:
@@ -1071,6 +1527,56 @@ paths:
                 $ref: "#/components/schemas/FehlerV1"
         "403":
           description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/profile/{benutzerId}/workouts:
+    get:
+      summary: Öffentliche Workouts eines Benutzerprofils abrufen
+      description: Liefert ausschließlich öffentliche Workouts des angegebenen Benutzers
+        für angemeldete USER bzw. den Besitzer selbst. Fremde ADMIN-Konten erhalten
+        keinen Zugriff.
+      operationId: listeOeffentlicheProfilWorkoutsV1
+      tags:
+      - Profile
+      parameters:
+      - name: benutzerId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Öffentliche Workouts erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Kein Zugriff auf fremde Trainingsdaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Benutzer nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
       security:
       - SecurityScheme: []
   /v1/registrieren:
@@ -1286,6 +1792,33 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /v1/workouts/geteilt:
+    get:
+      summary: Geteilte Workouts auflisten
+      description: "Liefert alle Workouts (privat und öffentlich), zu denen der angemeldete\
+        \ Benutzer explizit eingeladen wurde."
+      operationId: listeGeteilteWorkoutsV1
+      tags:
+      - Workouts
+      responses:
+        "200":
+          description: Geteilte Workouts erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeteiltesWorkoutV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /v1/workouts/{id}:
     delete:
       summary: Eigenes Workout löschen
@@ -1374,8 +1907,9 @@ paths:
       - SecurityScheme: []
     get:
       summary: Workout-Details abrufen
-      description: Liefert ein einzelnes Workout inkl. aller Übungen und Sätze. Fremde
-        private Workouts liefern 404.
+      description: "Liefert ein einzelnes Workout inkl. aller Übungen und Sätze (Besitzer,\
+        \ eingeladener USER oder öffentliches Workout für USER). Unzugängliche Workouts\
+        \ liefern 404."
       operationId: getWorkoutV1
       tags:
       - Workouts
@@ -1392,6 +1926,191 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkoutV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/workouts/{id}/einladungen:
+    post:
+      summary: Benutzer zu einem eigenen Workout einladen
+      description: Lädt einen Benutzer per exaktem Benutzernamen zum Lesen eines eigenen
+        Workouts ein.
+      operationId: erstelleWorkoutEinladungV1
+      tags:
+      - Workout-Einladungen
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutEinladungErstellenV1"
+        required: true
+      responses:
+        "201":
+          description: Einladung erfolgreich erstellt
+          headers:
+            Location:
+              description: Pfad zur neu erstellten Einladung
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutEinladungV1"
+        "400":
+          description: Ungültiger Benutzername oder Selbsteinladung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout oder Benutzer nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Benutzer wurde bereits zu diesem Workout eingeladen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    get:
+      summary: Einladungen eines eigenen Workouts auflisten
+      description: Liefert alle eingeladenen Benutzer eines eigenen Workouts. Nur
+        für den Besitzer zugänglich.
+      operationId: listeWorkoutEinladungenV1
+      tags:
+      - Workout-Einladungen
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Einladungen erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutEinladungV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/workouts/{id}/einladungen/{eingeladenerId}:
+    delete:
+      summary: Einladung an einem eigenen Workout entfernen
+      description: Entfernt die Einladung eines Benutzers an einem eigenen Workout.
+        Nur für den Besitzer zugänglich.
+      operationId: loescheWorkoutEinladungV1
+      tags:
+      - Workout-Einladungen
+      parameters:
+      - name: eingeladenerId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Einladung erfolgreich entfernt
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Workout oder Einladung nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/workouts/{id}/sichtbarkeit:
+    patch:
+      summary: Sichtbarkeit eines eigenen Workouts umschalten
+      description: Ändert die Sichtbarkeit eines eigenen Workouts zwischen PRIVAT
+        und OEFFENTLICH.
+      operationId: aendereWorkoutSichtbarkeitV1
+      tags:
+      - Workouts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutSichtbarkeitV1"
+        required: true
+      responses:
+        "200":
+          description: Sichtbarkeit erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutV1"
+        "400":
+          description: Ungültige Eingabedaten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
         "401":
           description: Nicht angemeldet
           content:

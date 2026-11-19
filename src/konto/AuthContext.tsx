@@ -32,6 +32,7 @@ export interface AuthKontextWert {
   readonly aktualisiereSitzung: () => Promise<BenutzerV1 | null>;
   readonly setzeAngemeldetenBenutzer: (benutzer: BenutzerV1, frischRegistriert?: boolean) => void;
   readonly abmelden: () => Promise<AbmeldeErgebnis>;
+  readonly bereinigeSitzungLokal: () => void;
 }
 
 const STANDARD_AUTH_KONTEXT: AuthKontextWert = {
@@ -43,6 +44,7 @@ const STANDARD_AUTH_KONTEXT: AuthKontextWert = {
   aktualisiereSitzung: async () => null,
   setzeAngemeldetenBenutzer: () => {},
   abmelden: async () => ({ erfolg: true }),
+  bereinigeSitzungLokal: () => {},
 };
 
 const AuthContext = createContext<AuthKontextWert>(STANDARD_AUTH_KONTEXT);
@@ -181,6 +183,14 @@ export function AuthProvider({
     }
   }, [client]);
 
+  const bereinigeSitzungLokal = useCallback(() => {
+    anfrageZaehlerRef.current += 1;
+    setBenutzer(null);
+    setStatus('abgemeldet');
+    setFehlerMeldung(null);
+    setFrischRegistriert(false);
+  }, []);
+
   const wert = useMemo<AuthKontextWert>(
     () => ({
       benutzer,
@@ -191,6 +201,7 @@ export function AuthProvider({
       aktualisiereSitzung,
       setzeAngemeldetenBenutzer,
       abmelden,
+      bereinigeSitzungLokal,
     }),
     [
       benutzer,
@@ -201,6 +212,7 @@ export function AuthProvider({
       aktualisiereSitzung,
       setzeAngemeldetenBenutzer,
       abmelden,
+      bereinigeSitzungLokal,
     ],
   );
 
