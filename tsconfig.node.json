@@ -16,5 +16,11 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e/**/*.ts"]
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "playwright.integration.config.ts",
+    "e2e/**/*.ts",
+    "e2e-integration/**/*.ts"
+  ]
 }
