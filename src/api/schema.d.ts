@@ -4,6 +4,86 @@
  */
 
 export interface paths {
+    "/v1/abmelden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aktuelle Sitzung beenden
+         * @description Beendet die aktuelle Anmeldesitzung des angemeldeten Benutzers.
+         */
+        post: operations["abmeldenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/anmelden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mit einem Passkey anmelden
+         * @description Verifiziert die WebAuthn-Assertion, aktualisiert Signaturzähler und UTC-Verwendungsdatum und erstellt eine Sitzung.
+         */
+        post: operations["anmeldenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/anmelden/optionen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * WebAuthn-Optionen für die Anmeldung anfordern
+         * @description Liefert WebAuthn Request-Options. Ohne Benutzernamen wird Discoverable Login verwendet.
+         */
+        post: operations["anmeldenOptionenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ich": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Aktuell angemeldeten Benutzer abrufen
+         * @description Liefert die Profildaten des aktuell angemeldeten Benutzers.
+         */
+        get: operations["ichV1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/info": {
         parameters: {
             query?: never;
@@ -11,9 +91,144 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Liefert grundlegende Systeminformationen der API */
-        get: operations["systemInfoLesen"];
+        /**
+         * Systeminformationen abrufen
+         * @description Liefert den Anwendungsnamen und die aktuelle Serverversion für angemeldete Benutzer.
+         */
+        get: operations["getSystemInfoV1"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eigene Passkeys auflisten
+         * @description Liefert alle Passkeys des aktuell angemeldeten Benutzers.
+         */
+        get: operations["listePasskeysV1"];
+        put?: never;
+        /**
+         * Weiteren Passkey hinzufügen
+         * @description Verifiziert die WebAuthn-Antwort und speichert einen weiteren Passkey mit automatischer Bezeichnung 'Passkey n' (oder Wunschbezeichnung).
+         */
+        post: operations["passkeyHinzufuegenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/passkeys/optionen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * WebAuthn-Optionen für einen weiteren Passkey anfordern
+         * @description Erzeugt WebAuthn Creation-Options mit Ausschluss bereits registrierter Credentials des angemeldeten Benutzers.
+         */
+        post: operations["passkeyOptionenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/passkeys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Passkey löschen
+         * @description Löscht einen eigenen Passkey. Der letzte verbleibende Passkey eines Kontos darf nicht gelöscht werden.
+         */
+        delete: operations["passkeyLoeschenV1"];
+        options?: never;
+        head?: never;
+        /**
+         * Passkey umbenennen
+         * @description Ändert die Bezeichnung eines eigenen Passkeys.
+         */
+        patch: operations["passkeyUmbenennenV1"];
+        trace?: never;
+    };
+    "/v1/registrieren": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrierung mit erstem Passkey abschließen
+         * @description Verifiziert die WebAuthn-Registrierungsantwort, legt Benutzerkonto und ersten Passkey an und meldet den Benutzer direkt an.
+         */
+        post: operations["registrierenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/registrieren/optionen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * WebAuthn-Optionen für eine neue Registrierung anfordern
+         * @description Prüft Benutzername und Einwilligung, reserviert eine kurzlebige Registrierung (10 Minuten) und liefert WebAuthn Creation-Options.
+         */
+        post: operations["registrierenOptionenV1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/timer/einstellung": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Intervalltimer-Einstellung abrufen
+         * @description Liefert die gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers (oder Standardwerte mit gespeichert=false).
+         */
+        get: operations["getTimerEinstellungV1"];
+        /**
+         * Intervalltimer-Einstellung speichern
+         * @description Speichert oder aktualisiert die Intervalltimer-Einstellung des angemeldeten Benutzers.
+         */
+        put: operations["putTimerEinstellungV1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -25,37 +240,249 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Abschluss der Passkey-Anmeldung */
+        AnmeldenAnfrageV1: {
+            /** @description WebAuthn-Antwort von navigator.credentials.get() */
+            credential: components["schemas"]["PasskeyAnmeldeCredentialV1"];
+        };
+        /** @description Optionale Anfrage für Passkey-Anmeldeoptionen (leer für Discoverable Login) */
+        AnmeldenOptionenAnfrageV1: {
+            /**
+             * @description Optionaler Benutzername; leer für Discoverable Passkey Login
+             * @example max.muster
+             */
+            benutzername?: string;
+        };
+        /** @description Informationen zum angemeldeten Benutzerkonto */
+        BenutzerV1: {
+            /** @description Eindeutige Benutzer-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * @description Normalisierter Benutzername
+             * @example max.muster
+             */
+            benutzername: string;
+            /**
+             * @description Rolle des Benutzers
+             * @example USER
+             */
+            rolle: string;
+            /** @description Erstellungszeitpunkt des Kontos (UTC) */
+            erstelltAm: components["schemas"]["Instant"];
+            /** @description Zeitpunkt der DSGVO-Einwilligung (UTC) */
+            einwilligungAm: components["schemas"]["Instant"];
+        };
+        /** @description Einheitliches Fehlerformat der API */
+        FehlerV1: {
+            /**
+             * @description Maschinenlesbarer Fehlercode
+             * @example VALIDIERUNG_FEHLGESCHLAGEN
+             */
+            code: string;
+            /**
+             * @description Verständliche Fehlerbeschreibung
+             * @example Die Anfrage enthält ungültige Eingaben.
+             */
+            meldung: string;
+        };
+        /**
+         * Format: date-time
+         * @example 2022-03-10T16:15:50Z
+         */
+        Instant: string;
+        JsonNode: {
+            empty?: boolean;
+            valueNode?: boolean;
+            containerNode?: boolean;
+            missingNode?: boolean;
+            array?: boolean;
+            object?: boolean;
+            nodeType?: components["schemas"]["JsonNodeType"];
+            pojo?: boolean;
+            number?: boolean;
+            integralNumber?: boolean;
+            floatingPointNumber?: boolean;
+            short?: boolean;
+            int?: boolean;
+            long?: boolean;
+            float?: boolean;
+            double?: boolean;
+            bigDecimal?: boolean;
+            bigInteger?: boolean;
+            textual?: boolean;
+            boolean?: boolean;
+            null?: boolean;
+            binary?: boolean;
+        };
+        /** @enum {string} */
+        JsonNodeType: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+        /**
+         * Format: date
+         * @example 2022-03-10
+         */
+        LocalDate: string;
+        /** @description WebAuthn-Assertion-Credential */
+        PasskeyAnmeldeCredentialV1: {
+            /** @description Base64URL-kodierte Credential-ID */
+            id: string;
+            /** @description Base64URL-kodierte Raw-ID */
+            rawId: string;
+            /**
+             * @description Credential-Typ (public-key)
+             * @example public-key
+             */
+            type: string;
+            /** @description Assertion-Antwort des Authenticators */
+            response: components["schemas"]["WebAuthnAnmeldeAntwortV1"];
+        };
+        /** @description Anfrage zum Hinzufügen eines weiteren Passkeys */
+        PasskeyHinzufuegenAnfrageV1: {
+            /** @description WebAuthn-Registrierungsantwort */
+            credential: components["schemas"]["PasskeyRegistrierungsCredentialV1"];
+            /**
+             * @description Optionale Bezeichnung (sonst automatisch 'Passkey n')
+             * @example Smartphone
+             */
+            bezeichnung?: string;
+        };
+        /** @description WebAuthn-Antwort von navigator.credentials.create() */
+        PasskeyRegistrierungsCredentialV1: {
+            /** @description Base64URL-kodierte Credential-ID */
+            id: string;
+            /** @description Base64URL-kodierte Raw-ID */
+            rawId: string;
+            /**
+             * @description Credential-Typ (public-key)
+             * @example public-key
+             */
+            type: string;
+            /** @description Attestierungsantwort des Authenticators */
+            response: components["schemas"]["WebAuthnRegistrierungsAntwortV1"];
+        };
+        /** @description Anfrage zum Umbenennen eines Passkeys */
+        PasskeyUmbenennenAnfrageV1: {
+            /**
+             * @description Neue Bezeichnung des Passkeys (1–50 Zeichen)
+             * @example YubiKey Arbeit
+             */
+            bezeichnung: string;
+        };
+        /** @description Gespeicherter Passkey eines Benutzers (ohne kryptografisches Schlüsselmaterial) */
+        PasskeyV1: {
+            /** @description Eindeutige Passkey-ID (UUID) */
+            id: components["schemas"]["UUID"];
+            /**
+             * @description Nutzerfreundliche Bezeichnung des Passkeys
+             * @example Passkey 1
+             */
+            bezeichnung: string;
+            /**
+             * @description Erstellungsdatum (UTC)
+             * @example 2026-11-19
+             */
+            erstelltAm: components["schemas"]["LocalDate"];
+            /**
+             * @description Datum der letzten Anmeldung (UTC), null falls noch nicht zur Anmeldung genutzt
+             * @example 2026-11-19
+             */
+            zuletztVerwendetAm?: components["schemas"]["LocalDate"];
+        };
+        /** @description Abschluss der Passkey-Registrierung */
+        RegistrierenAnfrageV1: {
+            /**
+             * @description Benutzername aus dem Options-Schritt
+             * @example max.muster
+             */
+            benutzername: string;
+            /** @description WebAuthn-Registrierungsantwort */
+            credential: components["schemas"]["PasskeyRegistrierungsCredentialV1"];
+            /**
+             * @description Optionale Bezeichnung für den ersten Passkey (sonst automatisch 'Passkey 1')
+             * @example Laptop
+             */
+            bezeichnung?: string;
+        };
+        /** @description Anfrage zum Starten einer offenen Passkey-Registrierung */
+        RegistrierenOptionenAnfrageV1: {
+            /**
+             * @description Gewünschter Benutzername (3–32 Zeichen, ASCII)
+             * @example max.muster
+             */
+            benutzername: string;
+            /**
+             * @description Ausdrückliche Einwilligung in die Datenverarbeitung
+             * @example true
+             */
+            einwilligungErteilt: boolean;
+        };
+        /** @description Systeminformationen des Servers */
         SystemInfoV1: {
             /**
-             * @description Anwendungsname
+             * @description Name der Anwendung
              * @example trainingsapp-server
              */
             name: string;
             /**
-             * @description Version der API-Instanz
-             * @example 0.1.0
+             * @description Version der Anwendung
+             * @example 0.1.0-SNAPSHOT
              */
             version: string;
-            /**
-             * Format: date-time
-             * @description Aktuelle Serverzeit in UTC (ISO-8601)
-             * @example 2026-11-19T12:00:00Z
-             */
-            zeitstempel: string;
         };
-        FehlerV1: {
+        /** @description Anfrage zum Aktualisieren der Intervalltimer-Einstellung */
+        TimerEinstellungAktualisierenV1: {
             /**
-             * @description Maschinenlesbarer Fehlercode
-             * @example NICHT_ANGEMELDET
+             * @description Trainingsdauer in ganzen Sekunden (1..86400)
+             * @example 45
              */
-            code: string;
+            trainingSekunden: number;
             /**
-             * @description Menschenlesbare Fehlermeldung auf Deutsch
-             * @example Anmeldung erforderlich.
+             * @description Pausendauer in ganzen Sekunden (0..86400)
+             * @example 15
              */
-            meldung: string;
-            /** @description Optionale Detailmeldungen (z. B. Validierungsfehler je Feld) */
-            details?: string[];
+            pauseSekunden: number;
+        };
+        /** @description Gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers */
+        TimerEinstellungV1: {
+            /**
+             * @description Trainingsdauer in ganzen Sekunden (1..86400)
+             * @example 30
+             */
+            trainingSekunden: number;
+            /**
+             * @description Pausendauer in ganzen Sekunden (0..86400)
+             * @example 10
+             */
+            pauseSekunden: number;
+            /**
+             * @description Gibt an, ob bereits eine benutzerdefinierte Einstellung gespeichert wurde
+             * @example true
+             */
+            readonly gespeichert: boolean;
+        };
+        /** Format: uuid */
+        UUID: string;
+        /** @description AuthenticatorAssertionResponse */
+        WebAuthnAnmeldeAntwortV1: {
+            /** @description Base64URL-kodiertes clientDataJSON */
+            clientDataJSON: string;
+            /** @description Base64URL-kodiertes authenticatorData */
+            authenticatorData: string;
+            /** @description Base64URL-kodierte Signatur */
+            signature: string;
+            /** @description Optionales Base64URL-kodiertes User-Handle */
+            userHandle?: string;
+        };
+        /** @description WebAuthn-Optionen (Creation- oder Request-Options) als JSON-Objekt */
+        WebAuthnOptionenV1: {
+            /** @description WebAuthn-Optionen für navigator.credentials.create/get */
+            optionen: components["schemas"]["JsonNode"];
+        };
+        /** @description AuthenticatorAttestationResponse */
+        WebAuthnRegistrierungsAntwortV1: {
+            /** @description Base64URL-kodiertes clientDataJSON */
+            clientDataJSON: string;
+            /** @description Base64URL-kodiertes attestationObject */
+            attestationObject: string;
         };
     };
     responses: never;
@@ -66,7 +493,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    systemInfoLesen: {
+    abmeldenV1: {
         parameters: {
             query?: never;
             header?: never;
@@ -75,16 +502,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Systeminformationen erfolgreich gelesen */
-            200: {
+            /** @description Erfolgreich abgemeldet */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["SystemInfoV1"];
-                };
+                content?: never;
             };
-            /** @description Authentifizierung erforderlich */
+            /** @description Nicht angemeldet */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -93,7 +518,87 @@ export interface operations {
                     "application/json": components["schemas"]["FehlerV1"];
                 };
             };
-            /** @description Zu viele Anfragen */
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    anmeldenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnmeldenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description Anmeldung erfolgreich */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenutzerV1"];
+                };
+            };
+            /** @description Ungültige Eingaben */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Passkey-Verifikation fehlgeschlagen */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    anmeldenOptionenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnmeldenOptionenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description WebAuthn-Anmeldeoptionen erstellt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebAuthnOptionenV1"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate-Limit überschritten */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -102,8 +607,497 @@ export interface operations {
                     "application/json": components["schemas"]["FehlerV1"];
                 };
             };
+        };
+    };
+    ichV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Benutzerdaten geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenutzerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSystemInfoV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Systeminformationen erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemInfoV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Interner Serverfehler */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    listePasskeysV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Passkeys erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyV1"][];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passkeyHinzufuegenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyHinzufuegenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description Passkey erfolgreich hinzugefügt */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyV1"];
+                };
+            };
+            /** @description Ungültige WebAuthn-Antwort oder Bezeichnung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Passkey bereits registriert */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    passkeyOptionenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description WebAuthn-Optionen erstellt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebAuthnOptionenV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    passkeyLoeschenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Passkey erfolgreich gelöscht */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Passkey nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Letzter Passkey darf nicht gelöscht werden */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    passkeyUmbenennenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["UUID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasskeyUmbenennenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description Passkey erfolgreich umbenannt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyV1"];
+                };
+            };
+            /** @description Ungültige Bezeichnung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Not Allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Passkey nicht gefunden */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    registrierenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrierenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description Benutzer erfolgreich registriert und angemeldet */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BenutzerV1"];
+                };
+            };
+            /** @description Ungültige Registrierungsdaten oder abgelaufene Registrierung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Benutzername oder Passkey bereits vorhanden */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Rate-Limit überschritten */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    registrierenOptionenV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrierenOptionenAnfrageV1"];
+            };
+        };
+        responses: {
+            /** @description WebAuthn-Registrierungsoptionen erstellt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebAuthnOptionenV1"];
+                };
+            };
+            /** @description Ungültige Eingabe oder fehlende Einwilligung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Benutzername bereits vergeben */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Rate-Limit überschritten */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    getTimerEinstellungV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timer-Einstellung erfolgreich geladen */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimerEinstellungV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+        };
+    };
+    putTimerEinstellungV1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimerEinstellungAktualisierenV1"];
+            };
+        };
+        responses: {
+            /** @description Timer-Einstellung erfolgreich gespeichert */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimerEinstellungV1"];
+                };
+            };
+            /** @description Ungültige Timer-Einstellung */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FehlerV1"];
+                };
+            };
+            /** @description Nicht angemeldet */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

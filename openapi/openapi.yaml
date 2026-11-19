@@ -1,35 +1,552 @@
+---
 openapi: 3.1.0
+components:
+  schemas:
+    AnmeldenAnfrageV1:
+      description: Abschluss der Passkey-Anmeldung
+      type: object
+      required:
+      - credential
+      properties:
+        credential:
+          description: WebAuthn-Antwort von navigator.credentials.get()
+          type: object
+          $ref: "#/components/schemas/PasskeyAnmeldeCredentialV1"
+    AnmeldenOptionenAnfrageV1:
+      description: Optionale Anfrage für Passkey-Anmeldeoptionen (leer für Discoverable
+        Login)
+      type: object
+      properties:
+        benutzername:
+          type: string
+          description: Optionaler Benutzername; leer für Discoverable Passkey Login
+          examples:
+          - max.muster
+    BenutzerV1:
+      description: Informationen zum angemeldeten Benutzerkonto
+      type: object
+      required:
+      - id
+      - benutzername
+      - rolle
+      - erstelltAm
+      - einwilligungAm
+      properties:
+        id:
+          description: Eindeutige Benutzer-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        benutzername:
+          type: string
+          description: Normalisierter Benutzername
+          examples:
+          - max.muster
+        rolle:
+          type: string
+          description: Rolle des Benutzers
+          examples:
+          - USER
+        erstelltAm:
+          description: Erstellungszeitpunkt des Kontos (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+        einwilligungAm:
+          description: Zeitpunkt der DSGVO-Einwilligung (UTC)
+          type: string
+          $ref: "#/components/schemas/Instant"
+    FehlerV1:
+      description: Einheitliches Fehlerformat der API
+      type: object
+      required:
+      - code
+      - meldung
+      properties:
+        code:
+          type: string
+          description: Maschinenlesbarer Fehlercode
+          examples:
+          - VALIDIERUNG_FEHLGESCHLAGEN
+        meldung:
+          type: string
+          description: Verständliche Fehlerbeschreibung
+          examples:
+          - Die Anfrage enthält ungültige Eingaben.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: "#/components/schemas/JsonNodeType"
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        "null":
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - "NULL"
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - 2022-03-10
+    PasskeyAnmeldeCredentialV1:
+      type: object
+      description: WebAuthn-Assertion-Credential
+      required:
+      - id
+      - rawId
+      - type
+      - response
+      properties:
+        id:
+          type: string
+          description: Base64URL-kodierte Credential-ID
+          pattern: \S
+        rawId:
+          type: string
+          description: Base64URL-kodierte Raw-ID
+          pattern: \S
+        type:
+          type: string
+          description: Credential-Typ (public-key)
+          examples:
+          - public-key
+          pattern: \S
+        response:
+          description: Assertion-Antwort des Authenticators
+          type: object
+          $ref: "#/components/schemas/WebAuthnAnmeldeAntwortV1"
+    PasskeyHinzufuegenAnfrageV1:
+      description: Anfrage zum Hinzufügen eines weiteren Passkeys
+      type: object
+      required:
+      - credential
+      properties:
+        credential:
+          description: WebAuthn-Registrierungsantwort
+          type: object
+          $ref: "#/components/schemas/PasskeyRegistrierungsCredentialV1"
+        bezeichnung:
+          type: string
+          description: Optionale Bezeichnung (sonst automatisch 'Passkey n')
+          examples:
+          - Smartphone
+    PasskeyRegistrierungsCredentialV1:
+      description: WebAuthn-Antwort von navigator.credentials.create()
+      type: object
+      required:
+      - id
+      - rawId
+      - type
+      - response
+      properties:
+        id:
+          type: string
+          description: Base64URL-kodierte Credential-ID
+          pattern: \S
+        rawId:
+          type: string
+          description: Base64URL-kodierte Raw-ID
+          pattern: \S
+        type:
+          type: string
+          description: Credential-Typ (public-key)
+          examples:
+          - public-key
+          pattern: \S
+        response:
+          description: Attestierungsantwort des Authenticators
+          type: object
+          $ref: "#/components/schemas/WebAuthnRegistrierungsAntwortV1"
+    PasskeyUmbenennenAnfrageV1:
+      description: Anfrage zum Umbenennen eines Passkeys
+      type: object
+      required:
+      - bezeichnung
+      properties:
+        bezeichnung:
+          type: string
+          description: Neue Bezeichnung des Passkeys (1–50 Zeichen)
+          examples:
+          - YubiKey Arbeit
+          pattern: \S
+    PasskeyV1:
+      description: Gespeicherter Passkey eines Benutzers (ohne kryptografisches Schlüsselmaterial)
+      type: object
+      required:
+      - id
+      - bezeichnung
+      - erstelltAm
+      properties:
+        id:
+          description: Eindeutige Passkey-ID (UUID)
+          type: string
+          $ref: "#/components/schemas/UUID"
+        bezeichnung:
+          type: string
+          description: Nutzerfreundliche Bezeichnung des Passkeys
+          examples:
+          - Passkey 1
+        erstelltAm:
+          description: Erstellungsdatum (UTC)
+          type: string
+          examples:
+          - 2026-11-19
+          $ref: "#/components/schemas/LocalDate"
+        zuletztVerwendetAm:
+          description: "Datum der letzten Anmeldung (UTC), null falls noch nicht zur\
+            \ Anmeldung genutzt"
+          type: string
+          examples:
+          - 2026-11-19
+          $ref: "#/components/schemas/LocalDate"
+    RegistrierenAnfrageV1:
+      description: Abschluss der Passkey-Registrierung
+      type: object
+      required:
+      - benutzername
+      - credential
+      properties:
+        benutzername:
+          type: string
+          description: Benutzername aus dem Options-Schritt
+          examples:
+          - max.muster
+          pattern: \S
+        credential:
+          description: WebAuthn-Registrierungsantwort
+          type: object
+          $ref: "#/components/schemas/PasskeyRegistrierungsCredentialV1"
+        bezeichnung:
+          type: string
+          description: Optionale Bezeichnung für den ersten Passkey (sonst automatisch
+            'Passkey 1')
+          examples:
+          - Laptop
+    RegistrierenOptionenAnfrageV1:
+      description: Anfrage zum Starten einer offenen Passkey-Registrierung
+      type: object
+      required:
+      - benutzername
+      - einwilligungErteilt
+      properties:
+        benutzername:
+          type: string
+          description: "Gewünschter Benutzername (3–32 Zeichen, ASCII)"
+          examples:
+          - max.muster
+          pattern: \S
+        einwilligungErteilt:
+          type: boolean
+          description: Ausdrückliche Einwilligung in die Datenverarbeitung
+          examples:
+          - true
+    SystemInfoV1:
+      description: Systeminformationen des Servers
+      type: object
+      required:
+      - name
+      - version
+      properties:
+        name:
+          type: string
+          description: Name der Anwendung
+          examples:
+          - trainingsapp-server
+        version:
+          type: string
+          description: Version der Anwendung
+          examples:
+          - 0.1.0-SNAPSHOT
+    TimerEinstellungAktualisierenV1:
+      description: Anfrage zum Aktualisieren der Intervalltimer-Einstellung
+      type: object
+      required:
+      - trainingSekunden
+      - pauseSekunden
+      properties:
+        trainingSekunden:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          description: Trainingsdauer in ganzen Sekunden (1..86400)
+          examples:
+          - 45
+        pauseSekunden:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          description: Pausendauer in ganzen Sekunden (0..86400)
+          examples:
+          - 15
+    TimerEinstellungV1:
+      description: Gespeicherte Intervalltimer-Einstellung des angemeldeten Benutzers
+      type: object
+      required:
+      - trainingSekunden
+      - pauseSekunden
+      - gespeichert
+      properties:
+        trainingSekunden:
+          type: integer
+          minimum: 1
+          maximum: 86400
+          description: Trainingsdauer in ganzen Sekunden (1..86400)
+          examples:
+          - 30
+        pauseSekunden:
+          type: integer
+          minimum: 0
+          maximum: 86400
+          description: Pausendauer in ganzen Sekunden (0..86400)
+          examples:
+          - 10
+        gespeichert:
+          type: boolean
+          readOnly: true
+          description: Gibt an, ob bereits eine benutzerdefinierte Einstellung gespeichert wurde
+          examples:
+          - true
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    WebAuthnAnmeldeAntwortV1:
+      type: object
+      description: AuthenticatorAssertionResponse
+      required:
+      - clientDataJSON
+      - authenticatorData
+      - signature
+      properties:
+        clientDataJSON:
+          type: string
+          description: Base64URL-kodiertes clientDataJSON
+          pattern: \S
+        authenticatorData:
+          type: string
+          description: Base64URL-kodiertes authenticatorData
+          pattern: \S
+        signature:
+          type: string
+          description: Base64URL-kodierte Signatur
+          pattern: \S
+        userHandle:
+          type: string
+          description: Optionales Base64URL-kodiertes User-Handle
+    WebAuthnOptionenV1:
+      description: WebAuthn-Optionen (Creation- oder Request-Options) als JSON-Objekt
+      type: object
+      required:
+      - optionen
+      properties:
+        optionen:
+          description: WebAuthn-Optionen für navigator.credentials.create/get
+          type: array
+          $ref: "#/components/schemas/JsonNode"
+    WebAuthnRegistrierungsAntwortV1:
+      type: object
+      description: AuthenticatorAttestationResponse
+      required:
+      - clientDataJSON
+      - attestationObject
+      properties:
+        clientDataJSON:
+          type: string
+          description: Base64URL-kodiertes clientDataJSON
+          pattern: \S
+        attestationObject:
+          type: string
+          description: Base64URL-kodiertes attestationObject
+          pattern: \S
 info:
+  description: Versionierte REST-API der Trainingsapp (/v1)
   title: Trainingsapp API
   version: 1.0.0
-  description: >
-    Initialer OpenAPI-Vertrag (GS-01) zwischen TrainingsappServer und TrainingsappClient.
-    Wird bei Backend-Änderungen aus dem exportierten Quarkus-Schema aktualisiert und via
-    `npm run api:generate` nach `src/api/schema.d.ts` übersetzt.
-servers:
-  - url: /
+tags:
+- name: Authentifizierung
+  description: "Passkey-Registrierung, Anmeldung, Abmeldung und aktueller Benutzer"
+- name: Passkeys
+  description: Verwaltung der eigenen Passkeys
+- name: System
+  description: Systeminformationen des Servers
+- name: Timer
+  description: Intervalltimer-Einstellungen des angemeldeten Benutzers
 paths:
-  /v1/info:
-    get:
-      operationId: systemInfoLesen
-      summary: Liefert grundlegende Systeminformationen der API
+  /v1/abmelden:
+    post:
+      summary: Aktuelle Sitzung beenden
+      description: Beendet die aktuelle Anmeldesitzung des angemeldeten Benutzers.
+      operationId: abmeldenV1
       tags:
-        - System
+      - Authentifizierung
+      responses:
+        "204":
+          description: Erfolgreich abgemeldet
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/anmelden:
+    post:
+      summary: Mit einem Passkey anmelden
+      description: "Verifiziert die WebAuthn-Assertion, aktualisiert Signaturzähler\
+        \ und UTC-Verwendungsdatum und erstellt eine Sitzung."
+      operationId: anmeldenV1
+      tags:
+      - Authentifizierung
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnmeldenAnfrageV1"
+        required: true
       responses:
         "200":
-          description: Systeminformationen erfolgreich gelesen
+          description: Anmeldung erfolgreich
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BenutzerV1"
+        "400":
+          description: Ungültige Eingaben
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Passkey-Verifikation fehlgeschlagen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+  /v1/anmelden/optionen:
+    post:
+      summary: WebAuthn-Optionen für die Anmeldung anfordern
+      description: Liefert WebAuthn Request-Options. Ohne Benutzernamen wird Discoverable
+        Login verwendet.
+      operationId: anmeldenOptionenV1
+      tags:
+      - Authentifizierung
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnmeldenOptionenAnfrageV1"
+        required: true
+      responses:
+        "200":
+          description: WebAuthn-Anmeldeoptionen erstellt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptionenV1"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "400":
+          description: Bad Request
+  /v1/ich:
+    get:
+      summary: Aktuell angemeldeten Benutzer abrufen
+      description: Liefert die Profildaten des aktuell angemeldeten Benutzers.
+      operationId: ichV1
+      tags:
+      - Authentifizierung
+      responses:
+        "200":
+          description: Benutzerdaten geladen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BenutzerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/info:
+    get:
+      summary: Systeminformationen abrufen
+      description: Liefert den Anwendungsnamen und die aktuelle Serverversion für
+        angemeldete Benutzer.
+      operationId: getSystemInfoV1
+      tags:
+      - System
+      responses:
+        "200":
+          description: Systeminformationen erfolgreich geladen
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemInfoV1"
         "401":
-          description: Authentifizierung erforderlich
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FehlerV1"
-        "429":
-          description: Zu viele Anfragen
+          description: Nicht angemeldet
           content:
             application/json:
               schema:
@@ -40,44 +557,326 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FehlerV1"
-components:
-  schemas:
-    SystemInfoV1:
-      type: object
-      required:
-        - name
-        - version
-        - zeitstempel
-      properties:
-        name:
-          type: string
-          description: Anwendungsname
-          example: trainingsapp-server
-        version:
-          type: string
-          description: Version der API-Instanz
-          example: 0.1.0
-        zeitstempel:
-          type: string
-          format: date-time
-          description: Aktuelle Serverzeit in UTC (ISO-8601)
-          example: "2026-11-19T12:00:00Z"
-    FehlerV1:
-      type: object
-      required:
-        - code
-        - meldung
-      properties:
-        code:
-          type: string
-          description: Maschinenlesbarer Fehlercode
-          example: NICHT_ANGEMELDET
-        meldung:
-          type: string
-          description: Menschenlesbare Fehlermeldung auf Deutsch
-          example: Anmeldung erforderlich.
-        details:
-          type: array
-          description: Optionale Detailmeldungen (z. B. Validierungsfehler je Feld)
-          items:
-            type: string
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/passkeys:
+    post:
+      summary: Weiteren Passkey hinzufügen
+      description: Verifiziert die WebAuthn-Antwort und speichert einen weiteren Passkey
+        mit automatischer Bezeichnung 'Passkey n' (oder Wunschbezeichnung).
+      operationId: passkeyHinzufuegenV1
+      tags:
+      - Passkeys
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasskeyHinzufuegenAnfrageV1"
+        required: true
+      responses:
+        "201":
+          description: Passkey erfolgreich hinzugefügt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyV1"
+        "400":
+          description: Ungültige WebAuthn-Antwort oder Bezeichnung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Passkey bereits registriert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    get:
+      summary: Eigene Passkeys auflisten
+      description: Liefert alle Passkeys des aktuell angemeldeten Benutzers.
+      operationId: listePasskeysV1
+      tags:
+      - Passkeys
+      responses:
+        "200":
+          description: Passkeys erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PasskeyV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/passkeys/optionen:
+    post:
+      summary: WebAuthn-Optionen für einen weiteren Passkey anfordern
+      description: Erzeugt WebAuthn Creation-Options mit Ausschluss bereits registrierter
+        Credentials des angemeldeten Benutzers.
+      operationId: passkeyOptionenV1
+      tags:
+      - Passkeys
+      responses:
+        "200":
+          description: WebAuthn-Optionen erstellt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptionenV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/passkeys/{id}:
+    patch:
+      summary: Passkey umbenennen
+      description: Ändert die Bezeichnung eines eigenen Passkeys.
+      operationId: passkeyUmbenennenV1
+      tags:
+      - Passkeys
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasskeyUmbenennenAnfrageV1"
+        required: true
+      responses:
+        "200":
+          description: Passkey erfolgreich umbenannt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasskeyV1"
+        "400":
+          description: Ungültige Bezeichnung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Passkey nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    delete:
+      summary: Passkey löschen
+      description: Löscht einen eigenen Passkey. Der letzte verbleibende Passkey eines
+        Kontos darf nicht gelöscht werden.
+      operationId: passkeyLoeschenV1
+      tags:
+      - Passkeys
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Passkey erfolgreich gelöscht
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "404":
+          description: Passkey nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Letzter Passkey darf nicht gelöscht werden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /v1/registrieren:
+    post:
+      summary: Registrierung mit erstem Passkey abschließen
+      description: "Verifiziert die WebAuthn-Registrierungsantwort, legt Benutzerkonto\
+        \ und ersten Passkey an und meldet den Benutzer direkt an."
+      operationId: registrierenV1
+      tags:
+      - Authentifizierung
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrierenAnfrageV1"
+        required: true
+      responses:
+        "201":
+          description: Benutzer erfolgreich registriert und angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BenutzerV1"
+        "400":
+          description: Ungültige Registrierungsdaten oder abgelaufene Registrierung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Benutzername oder Passkey bereits vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+  /v1/registrieren/optionen:
+    post:
+      summary: WebAuthn-Optionen für eine neue Registrierung anfordern
+      description: "Prüft Benutzername und Einwilligung, reserviert eine kurzlebige\
+        \ Registrierung (10 Minuten) und liefert WebAuthn Creation-Options."
+      operationId: registrierenOptionenV1
+      tags:
+      - Authentifizierung
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrierenOptionenAnfrageV1"
+        required: true
+      responses:
+        "200":
+          description: WebAuthn-Registrierungsoptionen erstellt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebAuthnOptionenV1"
+        "400":
+          description: Ungültige Eingabe oder fehlende Einwilligung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "409":
+          description: Benutzername bereits vergeben
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+  /v1/timer/einstellung:
+    get:
+      summary: Intervalltimer-Einstellung abrufen
+      description: Liefert die gespeicherte Intervalltimer-Einstellung des angemeldeten
+        Benutzers (oder Standardwerte mit gespeichert=false).
+      operationId: getTimerEinstellungV1
+      tags:
+      - Timer
+      responses:
+        "200":
+          description: Timer-Einstellung erfolgreich geladen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimerEinstellungV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+      security:
+      - SecurityScheme: []
+    put:
+      summary: Intervalltimer-Einstellung speichern
+      description: Speichert oder aktualisiert die Intervalltimer-Einstellung des
+        angemeldeten Benutzers.
+      operationId: putTimerEinstellungV1
+      tags:
+      - Timer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TimerEinstellungAktualisierenV1"
+        required: true
+      responses:
+        "200":
+          description: Timer-Einstellung erfolgreich gespeichert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimerEinstellungV1"
+        "400":
+          description: Ungültige Timer-Einstellung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+        "401":
+          description: Nicht angemeldet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FehlerV1"
+      security:
+      - SecurityScheme: []
+servers:
+- url: http://localhost:8080
+  description: Auto generated value
+- url: http://0.0.0.0:8080
+  description: Auto generated value
