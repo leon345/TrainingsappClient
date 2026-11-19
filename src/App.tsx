@@ -29,6 +29,7 @@ import { AuthProvider } from './konto/AuthContext';
 import { DatenschutzSeite } from './pages/DatenschutzSeite';
 import { EntdeckenSeite } from './pages/EntdeckenSeite';
 import { KontoSeite } from './pages/KontoSeite';
+import { ProfilSeite } from './pages/ProfilSeite';
 import { TimerSeite } from './pages/TimerSeite';
 import { WorkoutDetailSeite } from './pages/WorkoutDetailSeite';
 import { WorkoutNeuSeite } from './pages/WorkoutNeuSeite';
@@ -51,6 +52,9 @@ const NAVIGATIONSPUNKTE: readonly NavigationsPunkt[] = [
 function istNavPunktAktiv(pfad: NavigationsPunkt['pfad'], aktuellerPfad: string): boolean {
   if (pfad === '/') {
     return aktuellerPfad === '/';
+  }
+  if (pfad === '/entdecken' && aktuellerPfad.startsWith('/profil/')) {
+    return true;
   }
   return aktuellerPfad === pfad || aktuellerPfad.startsWith(`${pfad}/`);
 }
@@ -188,6 +192,7 @@ function AppShell() {
             <Route path="/workouts/neu" element={<WorkoutNeuSeite />} />
             <Route path="/workouts/:id" element={<WorkoutDetailSeite />} />
             <Route path="/entdecken" element={<EntdeckenSeite />} />
+            <Route path="/profil/:benutzerId" element={<ProfilSeite />} />
             <Route path="/konto" element={<KontoSeite />} />
             <Route path="/datenschutz" element={<DatenschutzSeite />} />
             <Route path="*" element={<Navigate to="/" replace />} />
