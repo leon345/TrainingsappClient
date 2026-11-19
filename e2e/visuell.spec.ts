@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { installiereV1Attrappe } from './support/v1Attrappe';
 
 const SZENARIEN = [
   { name: 'startseite-desktop-hell', breite: 1280, hoehe: 800, farbschema: 'light' as const },
@@ -44,6 +45,97 @@ test.describe('Visuelle Regression (nur Chromium – Nutzerentscheid C)', () => 
     });
 
     await expect(page).toHaveScreenshot('timer-laufend-mobil-hell.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: konto-abgemeldet-desktop-hell', async ({ page }) => {
+    await installiereV1Attrappe(page, { initialAngemeldet: false });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+
+    await page.goto('/konto');
+    await expect(page.getByRole('button', { name: 'Mit Passkey anmelden' })).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('konto-abgemeldet-desktop-hell.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: konto-abgemeldet-mobil-dunkel', async ({ page }) => {
+    await installiereV1Attrappe(page, { initialAngemeldet: false });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+
+    await page.goto('/konto');
+    await expect(page.getByRole('button', { name: 'Mit Passkey anmelden' })).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('konto-abgemeldet-mobil-dunkel.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: konto-angemeldet-desktop-hell', async ({ page }) => {
+    await installiereV1Attrappe(page, {
+      initialAngemeldet: true,
+      initialPasskeys: [
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+          credentialId: 'cred-1',
+          bezeichnung: 'Laptop Arbeit',
+          erstelltAm: '2026-11-19',
+          zuletztVerwendetAm: '2026-11-20',
+        },
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002',
+          credentialId: 'cred-2',
+          bezeichnung: 'Smartphone',
+          erstelltAm: '2026-11-19',
+        },
+      ],
+    });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+
+    await page.goto('/konto');
+    await expect(page.getByText('Laptop Arbeit', { exact: true })).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('konto-angemeldet-desktop-hell.png', {
+      animations: 'disabled',
+    });
+  });
+
+  test('Snapshot: konto-angemeldet-mobil-dunkel', async ({ page }) => {
+    await installiereV1Attrappe(page, {
+      initialAngemeldet: true,
+      initialPasskeys: [
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001',
+          credentialId: 'cred-1',
+          bezeichnung: 'Passkey 1',
+          erstelltAm: '2026-11-19',
+        },
+      ],
+    });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+
+    await page.goto('/konto');
+    await expect(page.getByText('Passkey 1', { exact: true })).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    await expect(page).toHaveScreenshot('konto-angemeldet-mobil-dunkel.png', {
       animations: 'disabled',
     });
   });

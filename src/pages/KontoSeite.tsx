@@ -853,7 +853,7 @@ export function KontoSeite() {
                       variant="outlined"
                       size="large"
                       disabled={!webAuthnUnterstuetzt || aktionLaeuft}
-                      sx={{ whiteSpace: 'nowrap', minHeight: 56 }}
+                      sx={{ whiteSpace: 'nowrap', minHeight: 56, flexShrink: 0, px: 3 }}
                     >
                       Mit Benutzername anmelden
                     </Button>
